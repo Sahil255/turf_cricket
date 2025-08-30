@@ -17,6 +17,11 @@ export interface Turf {
   opening_time: string;
   closing_time: string;
   active: boolean;
+  amenities: string[]
+  contact_phone?: string
+  contact_email?: string
+  created_at: string
+  updated_at: string
 
   // id: string
   // name: string

@@ -107,6 +107,13 @@ export default function TurfDetailsPage() {
     }
   }
 
+  const amenityIcons: { [key: string]: any } = {
+    'WiFi': Wifi,
+    'Parking': Car,
+    'Refreshments': Coffee,
+    'Security': Shield,
+    'Floodlights': Clock,
+  }
 
   
   const handleSlotSelect = async (
@@ -230,7 +237,7 @@ export default function TurfDetailsPage() {
     <>
       <div className="container mx-auto px-4 py-8">
         {/* Hero Image */}
-        {/* <div className="relative h-64 md:h-96 rounded-lg overflow-hidden mb-8">
+        <div className="relative h-64 md:h-96 rounded-lg overflow-hidden mb-8">
           <Image
             src={turf.images[0] || 'https://images.pexels.com/photos/274422/pexels-photo-274422.jpeg'}
             alt={turf.name}
@@ -244,9 +251,130 @@ export default function TurfDetailsPage() {
               4.8
             </Badge>
           </div>
-        </div> */}
+        </div>
 
-        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Turf Details */}
+          <div className="lg:col-span-2 space-y-6">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{turf.name}</h1>
+              <div className="flex items-center text-gray-600 mb-4">
+                <MapPin className="h-4 w-4 mr-2" />
+                <span>{turf.location}</span>
+              </div>
+              
+              {turf.description && (
+                <p className="text-gray-700 leading-relaxed">{turf.description}</p>
+              )}
+            </div>
+
+            {/* Amenities */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Amenities</CardTitle>
+              </CardHeader>
+              {/* <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {turf.amenities.map((amenity, index) => {
+                    const IconComponent = amenityIcons[amenity] || CheckCircle
+                    return (
+                      <div key={index} className="flex items-center">
+                        <IconComponent className="h-4 w-4 text-green-600 mr-2" />
+                        <span className="text-sm">{amenity}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent> */}
+            </Card>
+
+            {/* Additional Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Users className="h-5 w-5 mr-2" />
+                    Capacity
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">22 Players</p>
+                  <p className="text-gray-600">Full cricket team capacity</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Clock className="h-5 w-5 mr-2" />
+                    Operating Hours
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-lg font-semibold">6:00 AM - 11:00 PM</p>
+                  <p className="text-gray-600">7 days a week</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Contact Information */}
+            {/* {(turf.contact_phone || turf.contact_email) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contact Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {turf.contact_phone && (
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 text-gray-600 mr-3" />
+                      <span>{turf.contact_phone}</span>
+                    </div>
+                  )}
+                  {turf.contact_email && (
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 text-gray-600 mr-3" />
+                      <span>{turf.contact_email}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )} */}
+
+            {/* Policies */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Booking Policies</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-start">
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-3 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Free Cancellation</p>
+                    <p className="text-sm text-gray-600">Cancel up to 24 hours before your booking</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-3 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Instant Confirmation</p>
+                    <p className="text-sm text-gray-600">Your booking is confirmed immediately</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-4 w-4 text-green-600 mr-3 mt-0.5" />
+                  <div>
+                    <p className="font-medium">Equipment Available</p>
+                    <p className="text-sm text-gray-600">Basic cricket equipment can be rented</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div>
+            <Button onClick={() => setShowLoginModal(true)}>
+                Book Now
+              </Button>
+          </div>
           
 
           {/* Booking Calendar */}
@@ -265,12 +393,19 @@ export default function TurfDetailsPage() {
               />
             )}
             </div>
+          </div>
         </div>
-        </div>
+      </div>
 
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+      />
+      <BookingModel
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)
+        }
+        turf = {turf}
       />
     </>
   )

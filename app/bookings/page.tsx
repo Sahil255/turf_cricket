@@ -5,18 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  IndianRupee, 
-  User, 
-  Search,
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  IndianRupee,
+  User,
+  Search, ChevronDown, ChevronUp,
   Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+// import QRCode from 'qrcode.react'
+import QRCode from 'react-qr-code';
 
 interface Booking {
   id: string;
@@ -43,11 +45,17 @@ export default function AdminBookings() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-   const { user, firebaseUser } = useAuth()
+  const { user, firebaseUser } = useAuth()
+  const [expandedQRCodes, setExpandedQRCodes] = useState({})
+   const [paymentLoading, setPaymentLoading] = useState({})
+  const [error, setError] = useState(null)
   const { toast } = useToast();
 
   useEffect(() => {
     fetchBookings();
+    if (localStorage.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
   }, []);
 
   const fetchBookings = async () => {
@@ -60,11 +68,11 @@ export default function AdminBookings() {
       } else {
         console.warn('No user authenticated, skipping Authorization header');
       }
-      const response = await fetch('/api/bookings',{headers})
+      const response = await fetch('/api/all_bookings', { headers })
       if (response.ok) {
-      const bookings = await response.json()
-      setBookings(bookings || []);
-      console.debug(bookings);
+        const bookings = await response.json()
+        setBookings(bookings || []);
+        console.debug(bookings);
       }
       // const { bookings } = await response.json();
       // console.log(bookings);
@@ -76,189 +84,314 @@ export default function AdminBookings() {
     }
   };
 
-  const handleStatusUpdate = async (bookingId: string, newStatus: string, type: 'booking' | 'payment') => {
+
+  // Validate phone number
+  const validatePhoneNumber = (phone) => {
+    const cleanPhone = phone.replace(/[^0-9+]/g, '') // Remove non-numeric characters except +
+    if (cleanPhone.startsWith('+91') && cleanPhone.length === 13) return cleanPhone
+    if (cleanPhone.length === 10) return `+91${cleanPhone}`
+    return null // Invalid phone number
+  }
+
+
+  // Handle Pay Now button click
+  const handlePayNow = async (booking) => {
+    setPaymentLoading((prev) => ({ ...prev, [booking.id]: true }))
+    setError(null)
     try {
-      const updateData = type === 'booking' 
-        ? { booking_status: newStatus }
-        : { payment_status: newStatus };
-      const token = await firebaseUser?.getIdToken();
-      const response = await fetch(`/api/bookings/${bookingId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updateData),
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: `${type === 'booking' ? 'Booking' : 'Payment'} status updated successfully`,
-        });
-        fetchBookings();
-      } else {
-        const { error } = await response.json();
-        toast({
-          title: "Error",
-          description: error || 'Failed to update status',
-          variant: "destructive",
-        });
+      // Validate phone number
+      const contact = validatePhoneNumber(booking.user.phone)
+      if (!contact) {
+        throw new Error('Invalid phone number format')
       }
-    } catch (error) {
-      console.error('Error updating booking:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update booking. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'confirmed': 
-      case 'completed': return 'default';
-      case 'pending': return 'secondary';
-      case 'cancelled': 
-      case 'failed': return 'destructive';
-      case 'refunded': return 'outline';
-      default: return 'outline';
+      // Create Razorpay order
+      const response = await fetch('/api/payment/create_razor_pay_order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          amount: booking.total_amount,
+          customerEmail: "example@email.com",
+          customerPhone: contact,
+          customerName: booking.user.name,
+        }),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create Razorpay order')
+      }
+      const { order_id, amount, currency } = await response.json()
+
+      // Log prefill for debugging
+      const prefill = {
+        name: booking.user.name,
+        email: "example@email.com",
+        contact: contact,
+      }
+      console.log('Razorpay prefill:', prefill)
+
+      // Initialize Razorpay checkout
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: amount,
+        currency: currency,
+        order_id: order_id,
+        name: 'Turf Booking',
+        description: `Payment for Booking ID: ${truncateId(booking.id)}`,
+        handler: function (response) {
+          // Update booking status
+          setBookings((prev) =>
+            prev.map((b) =>
+              b.id === booking.id
+                ? { ...b, payment_status: 'completed', booking_status: 'confirmed' }
+                : b
+            )
+          )
+          alert('Payment successful!')
+        },
+        prefill,
+        theme: {
+          color: 'hsl(var(--primary))',
+        },
+      }
+
+      const razorpay = new window.Razorpay(options)
+      razorpay.on('payment.failed', function (response) {
+        setError(`Payment failed: ${response.error.description}`)
+      })
+      razorpay.open()
+    } catch (error) {
+      console.error('Razorpay payment error:', error)
+      setError(error.message || 'Error initiating payment')
+    } finally {
+      setPaymentLoading((prev) => ({ ...prev, [booking.id]: false }))
     }
-  };
+  }
+
+  // Toggle expanded state for a booking
+  // Toggle QR code visibility
+  const toggleQRCode = (id) => {
+    setExpandedQRCodes((prev) => ({ ...prev, [id]: !prev[id] }))
+  }
+
+
+  // Truncate UUID for display
+  const truncateId = (id) => `${id.slice(0, 8)}...`
+
+
+  const getStatusBadgeVariant = (status) => {
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        return 'default'
+      case 'completed':
+        return 'success'
+      case 'pending':
+        return 'warning'
+      case 'cancelled':
+        return 'destructive'
+      default:
+        return 'secondary'
+    }
+  }
+
 
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = 
+    const matchesSearch =
       booking.turf.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.user.phone.includes(searchTerm);
-    
+
     const matchesStatus = statusFilter === 'all' || booking.booking_status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
+  // Derive single status (payment pending -> Pending, else use booking_status)
+  const getDisplayStatus = (booking) => {
+    return booking.payment_status === 'pending' ? 'Pending' : booking.booking_status
+  }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Booking Management</h1>
-        <p className="text-gray-600">View and manage all turf bookings</p>
-      </div>
+    <div className="min-h-screen bg-background dark:bg-background">
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search by turf name, user name, or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="all">All Status</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-      </div>
+      <main className="container mx-auto px-4 py-8 sm:py-10">
+        {/* Header Section */}
+        <section className="mb-8 text-center">
+          <h1 className="text-3xl sm:text-4xl font-display text-primary dark:text-primary-foreground mb-2">
+            My Bookings
+          </h1>
+          <p className="text-base sm:text-lg text-muted-foreground font-sans max-w-md mx-auto">
+            View and manage your turf bookings seamlessly.
+          </p>
+        </section>
 
-      {/* Bookings List */}
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-6">
-                <div className="h-20 bg-gray-200 rounded"></div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredBookings.map((booking) => (
-            <Card key={booking.id}>
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Turf & User</p>
-                      <p className="font-semibold">{booking.turf.name}</p>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <User className="w-3 h-3 mr-1" />
-                        {booking.user.name} ({booking.user.phone})
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-600">Date & Time</p>
-                      <p className="font-semibold">
-                        {format(new Date(booking.booking_date), 'MMM dd, yyyy')}
-                      </p>
-                      <p className="text-sm text-gray-600 flex items-center">
-                        <Clock className="w-3 h-3 mr-1" />
-                        {booking.start_time} - {booking.end_time}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-600">Amount & Duration</p>
-                      <p className="font-semibold flex items-center">
-                        <IndianRupee className="w-4 h-4" />
-                        {booking.total_amount}
-                      </p>
-                      <p className="text-sm text-gray-600">{booking.duration_minutes} minutes</p>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-600">Status</p>
-                      <div className="space-y-1">
-                        <Badge variant={getStatusBadgeVariant(booking.booking_status)}>
-                          {booking.booking_status}
-                        </Badge>
-                        <br />
-                        <Badge variant={getStatusBadgeVariant(booking.payment_status)}>
-                          {booking.payment_status}
+        {/* Filters */}
+        <section className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" />
+            <Input
+              placeholder="Search by Booking ID..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-card text-foreground border-border rounded-md text-sm sm:text-base font-sans"
+              aria-label="Search bookings by ID"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 bg-card text-foreground border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base font-sans"
+            aria-label="Filter bookings by status"
+          >
+            <option value="all">All Status</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </section>
+
+        {/* Bookings List */}
+        <section className="space-y-4 sm:space-y-6">
+          {loading ? (
+            <div className="space-y-4 sm:space-y-6">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="bg-card border-border shadow-md animate-pulse">
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="h-32 sm:h-36 bg-muted rounded-md"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4 sm:space-y-6">
+              {filteredBookings.map((booking) => (
+                <Card
+                  key={booking.id}
+                  className="bg-card border-border shadow-md hover:shadow-lg transition-shadow duration-300"
+                >
+                  <CardContent className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                    {/* Booking Details */}
+                    <div className="col-span-1 sm:col-span-2 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-base sm:text-lg font-display text-foreground truncate">
+                          ID: {truncateId(booking.id)}
+                        </h3>
+                        <Badge
+                          variant={getStatusBadgeVariant(getDisplayStatus(booking))}
+                          className="text-xs sm:text-sm font-sans capitalize"
+                        >
+                          {getDisplayStatus(booking)}
                         </Badge>
                       </div>
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm sm:text-base">
+                        <div>
+                          <p className="text-muted-foreground font-sans flex items-center">
+                            <Calendar className="w-4 h-4 mr-1.5" />
+                            Date
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            {format(new Date(booking.booking_date), 'MMM dd, yyyy')}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-sans flex items-center">
+                            <Clock className="w-4 h-4 mr-1.5" />
+                            Time
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            {booking.start_time} - {booking.end_time}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-sans flex items-center">
+                            <Clock className="w-4 h-4 mr-1.5" />
+                            Duration
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            {booking.duration_minutes} min
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground font-sans flex items-center">
+                            <IndianRupee className="w-4 h-4 mr-1.5" />
+                            Amount
+                          </p>
+                          <p className="font-semibold text-foreground">
+                            ₹{booking.total_amount}
+                          </p>
+                        </div>
+                      </div>
+                      {booking.payment_status === 'pending' && (
+                        <Button
+                          className="mt-3 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-sans text-sm sm:text-base rounded-md"
+                         
+                          onClick={() => handlePayNow(booking)}
+                          disabled={paymentLoading[booking.id]}
+                          aria-label="Pay now for this booking"
+                        >
+                          Pay Now
+                        </Button>
+                      )}
                     </div>
-                  </div>
-
-                  <div className="flex flex-col space-y-2 lg:ml-4">
-                    <p>Payment Status
-                      <p>{booking.payment_status}</p>
+                    {/* QR Code Section */}
+                    <div className="col-span-1 flex flex-col items-center sm:items-end justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleQRCode(booking.id)}
+                        className="mb-2 text-muted-foreground hover:text-primary font-sans text-xs sm:text-sm"
+                        aria-label={expandedQRCodes[booking.id] ? 'Hide QR code' : 'Show QR code'}
+                      >
+                        {expandedQRCodes[booking.id] ? (
+                          <>
+                            Hide QR <ChevronUp className="w-4 h-4 ml-1" />
+                          </>
+                        ) : (
+                          <>
+                            Show QR <ChevronDown className="w-4 h-4 ml-1" />
+                          </>
+                        )}
+                      </Button>
+                      {expandedQRCodes[booking.id] && (
+                        <div className="animate-accordion-down">
+                          <QRCode
+                            value={booking.id}
+                            alphabetic={booking.id}
+                            title='RCB Cricket Turf'
+                            
+                            type='qr'
+                            size={80}
+                            bgColor="hsl(var(--card))"
+                            fgColor="hsl(var(--primary))"
+                            className="rounded-md border border-border"
+                            aria-label={`QR code for booking ${booking.id}`}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {filteredBookings.length === 0 && (
+                <Card className="bg-card border-border shadow-md text-center p-8 sm:p-10">
+                  <CardContent>
+                    <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg sm:text-xl font-display text-foreground mb-2">
+                      No Bookings Found
+                    </h3>
+                    <p className="text-sm sm:text-base text-muted-foreground font-sans">
+                      {searchTerm || statusFilter !== 'all'
+                        ? 'No bookings match your filters.'
+                        : 'No bookings have been made yet.'}
                     </p>
-                    
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          
-          {filteredBookings.length === 0 && (
-            <Card className="text-center p-12">
-              <CardContent>
-                <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No Bookings Found
-                </h3>
-                <p className="text-gray-600">
-                  {searchTerm || statusFilter !== 'all' 
-                    ? 'No bookings match your current filters.' 
-                    : 'No bookings have been made yet.'
-                  }
-                </p>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
-        </div>
-      )}
+        </section>
+      </main>
     </div>
-  );
+  )
 }
