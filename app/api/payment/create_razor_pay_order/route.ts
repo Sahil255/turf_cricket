@@ -41,10 +41,10 @@ export async function POST(request: Request) {
       currency: response.data.currency,
     })
   } catch (error) {
-    console.error('Razorpay order creation error:', error.response?.data || error.message)
+    console.error('Razorpay order creation error:', error )
     return NextResponse.json(
-      { error: error.response?.data?.error?.description || 'Failed to create order' },
-      { status: error.response?.status || 500 }
+      { error: error || 'Failed to create order' },
+      { status:  500 }
     )
   }
 }

@@ -153,10 +153,10 @@ export function BookingModel({ isOpen, onClose }: BookingModelProps) {
             />
             {selectedDate && (
             <TimeSlotSelector
-            turfId={turf?.id}
+            turfId={turf?.id ?? "123"}
             selectedDate={selectedDate}
-            openingTime={turf?.opening_time}
-            closingTime={turf?.closing_time}
+            openingTime={turf?.opening_time ?? ""}
+            closingTime={turf?.closing_time ?? ""}
             onSlotSelect={handleSlotSelect}
             />
         )}

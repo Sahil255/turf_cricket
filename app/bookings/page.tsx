@@ -40,16 +40,22 @@ interface Booking {
   };
 }
 
+interface ExpandedQRCodes {
+  [id: string]: boolean;
+}
+
+
 export default function AdminBookings() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const { user, firebaseUser } = useAuth()
-  const [expandedQRCodes, setExpandedQRCodes] = useState({})
-   const [paymentLoading, setPaymentLoading] = useState({})
-  const [error, setError] = useState(null)
+  // const [expandedQRCodes, setExpandedQRCodes] = useState({})
+   const [paymentLoading, setPaymentLoading] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const [expandedQRCodes, setExpandedQRCodes] = useState<ExpandedQRCodes>({});
 
   useEffect(() => {
     fetchBookings();
@@ -86,7 +92,7 @@ export default function AdminBookings() {
 
 
   // Validate phone number
-  const validatePhoneNumber = (phone) => {
+  const validatePhoneNumber = (phone: string) => {
     const cleanPhone = phone.replace(/[^0-9+]/g, '') // Remove non-numeric characters except +
     if (cleanPhone.startsWith('+91') && cleanPhone.length === 13) return cleanPhone
     if (cleanPhone.length === 10) return `+91${cleanPhone}`
@@ -95,7 +101,7 @@ export default function AdminBookings() {
 
 
   // Handle Pay Now button click
-  const handlePayNow = async (booking) => {
+  const handlePayNow = async (booking: Booking) => {
     setPaymentLoading((prev) => ({ ...prev, [booking.id]: true }))
     setError(null)
     try {
@@ -139,7 +145,7 @@ export default function AdminBookings() {
         order_id: order_id,
         name: 'Turf Booking',
         description: `Payment for Booking ID: ${truncateId(booking.id)}`,
-        handler: function (response) {
+        handler: function (response: Promise<Response>) {
           // Update booking status
           setBookings((prev) =>
             prev.map((b) =>
@@ -156,14 +162,16 @@ export default function AdminBookings() {
         },
       }
 
-      const razorpay = new window.Razorpay(options)
-      razorpay.on('payment.failed', function (response) {
-        setError(`Payment failed: ${response.error.description}`)
+      // const razorpay = new window.Razorpay(options)
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.on('payment.failed', function (response: { error: { description: any; }; }) {
+        setError(`Payment failed: ${response.error.description}`);
       })
       razorpay.open()
-    } catch (error) {
+    } catch (error:unknown) {
+       const err = error as Error; 
       console.error('Razorpay payment error:', error)
-      setError(error.message || 'Error initiating payment')
+      setError(err.message   || 'Error initiating payment')
     } finally {
       setPaymentLoading((prev) => ({ ...prev, [booking.id]: false }))
     }
@@ -171,16 +179,24 @@ export default function AdminBookings() {
 
   // Toggle expanded state for a booking
   // Toggle QR code visibility
-  const toggleQRCode = (id) => {
-    setExpandedQRCodes((prev) => ({ ...prev, [id]: !prev[id] }))
-  }
-
+  // const toggleQRCode = (id: string) => {
+  //   setExpandedQRCodes((prev) => ({ ...prev, [id]: prev[id] }))
+  // }
+  
+  const toggleQRCode = (id: string) => {
+  setExpandedQRCodes((prev) => ({
+    ...prev,
+    [id]: !prev[id], // Toggles the boolean value for the given ID
+  }));
+};
 
   // Truncate UUID for display
-  const truncateId = (id) => `${id.slice(0, 8)}...`
+  const truncateId = (id: string | any[]) => `${id.slice(0, 8)}...`
+
+ type BadgeVariant = "default" | "destructive" | "secondary" | "outline" | "success" | "warning" | null | undefined;
 
 
-  const getStatusBadgeVariant = (status) => {
+  const getStatusBadgeVariant = (status: string): BadgeVariant => {
     switch (status.toLowerCase()) {
       case 'confirmed':
         return 'default'
@@ -207,7 +223,7 @@ export default function AdminBookings() {
     return matchesSearch && matchesStatus;
   });
   // Derive single status (payment pending -> Pending, else use booking_status)
-  const getDisplayStatus = (booking) => {
+  const getDisplayStatus = (booking: Booking) => {
     return booking.payment_status === 'pending' ? 'Pending' : booking.booking_status
   }
 
@@ -327,7 +343,7 @@ export default function AdminBookings() {
                           className="mt-3 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-sans text-sm sm:text-base rounded-md"
                          
                           onClick={() => handlePayNow(booking)}
-                          disabled={paymentLoading[booking.id]}
+                          disabled={paymentLoading[booking.id] ?? false}
                           aria-label="Pay now for this booking"
                         >
                           Pay Now
