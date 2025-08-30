@@ -77,10 +77,10 @@ export function TimeSlotSelector({
         console.warn('No user authenticated, skipping Authorization header');
       }
       
-      const response = await fetch(`/api/bookings?turfId=${turfId}&date=${selectedDate}`, {
+      const response = await fetch(`/api/all_bookings?turfId=${turfId}&date=${selectedDate}`, {
         headers,
       });
-      const { bookings } = await response.json();
+      const  bookings  = await response.json();
       console.log("SH bookigns ",bookings);
       setExistingBookings(bookings?.filter((b: any) => b.booking_status === 'confirmed') || []);
     } catch (error) {
@@ -119,7 +119,7 @@ export function TimeSlotSelector({
     }
 
     // Check for overlapping bookings
-    // console.log("SH existingBookings ",existingBookings);
+    console.log("SH existingBookings ",existingBookings);
     return !existingBookings.some(booking => {
       const bookingStart = new Date(`2024-01-01T${booking.start_time}`);
       const bookingEnd = new Date(`2024-01-01T${booking.end_time}`);
@@ -262,7 +262,7 @@ export function TimeSlotSelector({
                         {price}
                       </span>
                     ) : (
-                      'Booked'
+                      ''
                     )}
                   </div>
                 </Button>

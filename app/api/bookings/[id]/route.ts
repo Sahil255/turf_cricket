@@ -115,3 +115,38 @@ export async function POST(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json();
+    const { booking_status, payment_status } = body;
+
+    const { data: booking, error } = await supabase
+      .from('bookings')
+      .update({
+        booking_status,
+        payment_status,
+      })
+      .eq('id', params.id)
+      .select(`
+        *,
+        turf:turfs(*),
+        user:users(name, phone)
+      `)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ booking });
+  } catch (error) {
+    console.error('Error updating booking:', error);
+    return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
+  }
+}

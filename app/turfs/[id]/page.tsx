@@ -129,10 +129,14 @@ export default function TurfDetailsPage() {
       });
       return;
     }
+    if(!user)
+    {
+      setShowLoginModal(true);
+    }
     console.log("SH slot selected!!!!");
     setBookingLoading(true);
     try {
-
+ 
       console.log("in tme selct",turf?.id," duration ",duration);
       const token = await firebaseUser?.getIdToken();
       const response = await fetch(`/api/bookings?`,

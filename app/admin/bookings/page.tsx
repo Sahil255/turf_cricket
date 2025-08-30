@@ -60,9 +60,10 @@ export default function AdminBookings() {
       } else {
         console.warn('No user authenticated, skipping Authorization header');
       }
-      const response = await fetch('/api/bookings',{headers})
+      const response = await fetch('/api/all_bookings',{headers})
       if (response.ok) {
       const bookings = await response.json()
+      
       setBookings(bookings || []);
       console.debug(bookings);
       }
@@ -81,11 +82,12 @@ export default function AdminBookings() {
       const updateData = type === 'booking' 
         ? { booking_status: newStatus }
         : { payment_status: newStatus };
-
+      const token = await firebaseUser?.getIdToken();
       const response = await fetch(`/api/bookings/${bookingId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(updateData),
       });
@@ -191,7 +193,7 @@ export default function AdminBookings() {
                       <p className="font-semibold">{booking.turf.name}</p>
                       <p className="text-sm text-gray-600 flex items-center">
                         <User className="w-3 h-3 mr-1" />
-                        {/* {booking.user.name} ({booking.user.phone}) */}
+                        {booking.user.name} ({booking.user.phone})
                       </p>
                     </div>
                     

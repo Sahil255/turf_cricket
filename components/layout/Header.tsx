@@ -27,8 +27,8 @@ export function Header() {
     <>
       <header className="border-b bg-white sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-green-600">
-            CricketTurf
+          <Link href="/" className="text-xl font-bold text-red-600">
+            RCB CricketTurf
           </Link>
 
           <nav className="hidden md:flex items-center space-x-6">
@@ -45,7 +45,7 @@ export function Header() {
             )}
           </nav>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center bg-black space-x-4">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

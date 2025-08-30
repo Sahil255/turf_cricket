@@ -40,7 +40,8 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
         <div className="calendar-container">
           <Calendar
             onChange={handleDateChange}
-            value={date}
+            // value={date}
+            defaultValue={null}
             tileDisabled={tileDisabled}
             className="w-full border-none"
             prev2Label={null}

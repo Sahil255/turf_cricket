@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const token = authHeader.split('Bearer ')[1]
+    const token = authHeader?.split('Bearer ')[1]
     const decodedToken = await adminAuth.verifyIdToken(token)
 
     const searchParams = request.nextUrl.searchParams;
@@ -48,11 +48,12 @@ export async function GET(request: NextRequest) {
 
     const { data: bookings, error } = await supabaseAdmin
       .from('bookings')
-      .select(`
+     .select(`
         *,
-        turf:turfs(name, location)
+        turf:turfs(*),
+        user:users(name, phone)
       `)
-      .eq('user_id', decodedToken.uid)
+      .eq('user_id', decodedToken?.uid)
       .order('created_at', { ascending: false })
 
       console.log("SH in bookings api bookings ",bookings);
@@ -117,9 +118,12 @@ export async function POST(request: NextRequest) {
         total_amount,
         payment_status: 'pending',
         booking_status: 'confirmed',
-      })
-      .select()
-      .single()
+      }).select(`
+        *,
+        turf:turfs(*),
+        user:users(name, phone)
+      `)
+      .single();
 
     if (error) {
       console.error('Database error:', error)

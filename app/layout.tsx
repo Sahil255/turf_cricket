@@ -9,7 +9,7 @@ import { Toaster } from '@/components/ui/sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'CricketTurf - Book Premium Cricket Turfs',
+  title: 'RCB Cricket Turf - Book Premium Cricket Turfs',
   description: 'Book premium cricket turfs with ease. Play your best game on our well-maintained pitches.',
 };
 

@@ -7,7 +7,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold text-green-400 mb-4">CricketTurf</h3>
+            <h3 className="text-xl font-bold text-green-400 mb-4">RCB CricketTurf</h3>
             <p className="text-gray-300 mb-4">
               Book premium cricket turfs with ease. Play your best game on our well-maintained pitches.
             </p>
@@ -64,14 +64,14 @@ export function Footer() {
               </div>
               <div className="flex items-center">
                 <Mail className="h-4 w-4 mr-2" />
-                <span>info@cricketturf.com</span>
+                <span>info@rcbcricketturf.com</span>
               </div>
             </div>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 CricketTurf. All rights reserved.</p>
+          <p>&copy; 2025 RCB CricketTurf. All rights reserved.</p>
         </div>
       </div>
     </footer>
