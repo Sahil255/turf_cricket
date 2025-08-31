@@ -1,14 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { SetStateAction, useState } from 'react'
 import { signInWithPhoneNumber, RecaptchaVerifier, ConfirmationResult } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { PhoneInput } from '@/components/ui/phone-input'
+// import { PhoneInput } from '@/components/ui/phone-input'
 import { useToast } from '@/hooks/use-toast'
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'; // Don't forget the CSS import
+
 
 interface LoginModalProps {
   isOpen: boolean
@@ -24,6 +27,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [loading, setLoading] = useState(false)
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const { toast } = useToast()
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
@@ -51,7 +55,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setupRecaptcha()
       const appVerifier = window.recaptchaVerifier
       const fullPhoneNumber = `+91${phoneNumber}`
-      
+      console.log("SH phone number ",fullPhoneNumber);
       const confirmationResult = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier)
       setConfirmationResult(confirmationResult)
       setStep('otp')
@@ -177,54 +181,100 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     resetForm()
   }
 
-    const handleInputFocus = (e) => {
-    setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300); // Delay to account for keyboard animation
-  };
+   const handleInputFocus = (e: { target: any }) => {
+    const input = e.target;
+    const dialogContent = input.closest('.overflow-y-auto'); // Find the scrollable DialogContent
 
+    if (!input || !dialogContent) return; // Exit if elements are not found
+
+    setTimeout(() => {
+      // Check if visualViewport is supported (modern browsers)
+      if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const inputRect = input.getBoundingClientRect();
+        const dialogRect = dialogContent.getBoundingClientRect();
+
+        // Only scroll if the input is below the viewport's visible area
+        if (inputRect.bottom > viewportHeight) {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } else {
+        // Fallback for older browsers
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 250); // Reduced delay for faster response
+  };
+  
+  // const handlePhoneChange = (value: string) => {
+  //   // For India (+91), ensure the number part (excluding +91) is up to 10 digits
+  //   const numberWithoutCode = value.startsWith("+91") ? value.slice(3) : value;
+  //   if (numberWithoutCode.length <= 10) {
+  //     setPhoneNumber(value);
+  //   }
+  // };
+
+
+  const handlePhoneChange = (value: string) => {
+  const numberWithoutCode = value.startsWith("+91") ? value.slice(3) : value;
+  if (/^\d{0,10}$/.test(numberWithoutCode)) {
+    setPhoneNumber(value);
+    setPhoneError(numberWithoutCode.length === 10 ? null : "Phone number must be 10 digits");
+  }
+};
 return (
 <><div id="recaptcha-container"></div>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="w-full max-w-[95vw] sm:max-w-md p-4 sm:p-6 overflow-y-auto max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">
-            {step === 'phone' && 'Login with Phone'}
-            {step === 'otp' && 'Verify OTP'}
-            {step === 'profile' && 'Complete Your Profile'}
+            {step === "phone" && "Login with Phone"}
+            {step === "otp" && "Verify OTP"}
+            {step === "profile" && "Complete Your Profile"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {step === 'phone' && (
+          {step === "phone" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm sm:text-base">Phone Number</Label>
+                <Label htmlFor="phone" className="text-sm sm:text-base">
+                  Phone Number
+                </Label>
                 <PhoneInput
-                  id="phone"
+                  key="phone"
+                  country="in" // Default to India (+91)
+                  onlyCountries={["in"]} // Restrict to India only
+                  disableCountryCode={true} // Keep +91 visible
+                  disableDropdown={true} // Hide dropdown to lock country
                   placeholder="Enter your phone number"
                   value={phoneNumber}
-                  onChange={(value) => setPhoneNumber(value)}
+                  onChange={handlePhoneChange}
                   onFocus={handleInputFocus}
-                  inputClass="w-full p-2 text-sm sm:text-base"
+                  inputProps={{
+                    id: "phone",
+                    className: "w-full p-2 text-sm sm:text-base",
+                    style: { paddingLeft: "48px" }, // Prevent overlap with flag
+                    "aria-label": "Phone number",
+                  }}
                   containerClass="w-full"
-                  maxLength={10}
                 />
               </div>
-              <Button 
-                onClick={sendOTP} 
-                disabled={loading} 
+              <Button
+                onClick={sendOTP}
+                disabled={loading}
                 className="w-full h-12 text-sm sm:text-base"
               >
-                {loading ? 'Sending OTP...' : 'Send OTP'}
+                {loading ? "Sending OTP..." : "Send OTP"}
               </Button>
             </>
           )}
 
-          {step === 'otp' && (
+          {step === "otp" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="otp" className="text-sm sm:text-base">Enter OTP</Label>
+                <Label htmlFor="otp" className="text-sm sm:text-base">
+                  Enter OTP
+                </Label>
                 <Input
                   id="otp"
                   placeholder="Enter 6-digit OTP"
@@ -235,16 +285,16 @@ return (
                   className="w-full p-2 text-sm sm:text-base"
                 />
               </div>
-              <Button 
-                onClick={verifyOTP} 
-                disabled={loading} 
+              <Button
+                onClick={verifyOTP}
+                disabled={loading}
                 className="w-full h-12 text-sm sm:text-base"
               >
-                {loading ? 'Verifying...' : 'Verify OTP'}
+                {loading ? "Verifying..." : "Verify OTP"}
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setStep('phone')} 
+              <Button
+                variant="outline"
+                onClick={() => setStep("phone")}
                 className="w-full h-12 text-sm sm:text-base"
               >
                 Change Phone Number
@@ -252,10 +302,12 @@ return (
             </>
           )}
 
-          {step === 'profile' && (
+          {step === "profile" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm sm:text-base">Full Name *</Label>
+                <Label htmlFor="name" className="text-sm sm:text-base">
+                  Full Name *
+                </Label>
                 <Input
                   id="name"
                   placeholder="Enter your full name"
@@ -266,7 +318,9 @@ return (
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm sm:text-base">Email (Optional)</Label>
+                <Label htmlFor="email" className="text-sm sm:text-base">
+                  Email (Optional)
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -277,12 +331,12 @@ return (
                   className="w-full p-2 text-sm sm:text-base"
                 />
               </div>
-              <Button 
-                onClick={createProfile} 
-                disabled={loading} 
+              <Button
+                onClick={createProfile}
+                disabled={loading}
                 className="w-full h-12 text-sm sm:text-base"
               >
-                {loading ? 'Creating Account...' : 'Complete Registration'}
+                {loading ? "Creating Account..." : "Complete Registration"}
               </Button>
             </>
           )}
