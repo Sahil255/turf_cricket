@@ -17,7 +17,15 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
   const handleDateChange = (value: any) => {
     if (value instanceof Date) {
       setDate(value);
-      const formattedDate = value.toISOString().split('T')[0];
+      console.log("SH date change ",value);
+      // const formattedDate = value.toISOString().split('T')[0];
+      const year = value.getFullYear();
+      const month = String(value.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+      const day = String(value.getDate()).padStart(2, '0');
+
+      const formattedDate = `${year}-${month}-${day}`;
+      
+      console.log("SH date change form: ",formattedDate);
       onDateSelect(formattedDate);
     }
   };

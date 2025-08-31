@@ -41,6 +41,7 @@ export function TimeSlotSelector({
   const [selectedDuration, setSelectedDuration] = useState(60);
   const [loading, setLoading] = useState(true);
   const { user,firebaseUser } = useAuth();
+  const [bookingLoading, setBookingLoading] = useState(false)
 
   useEffect(() => {
     fetchPricingSlots();
@@ -106,23 +107,40 @@ export function TimeSlotSelector({
   };
 
   const isSlotAvailable = (startTime: string, duration: number) => {
-    const slotStart = new Date(`2024-01-01T${startTime}`);
+    const currDate = new Date();
+    const year = currDate.getFullYear();
+    // Add 1 to getMonth() because it's zero-indexed (January = 0)
+    const month = String(currDate.getMonth() + 1).padStart(2, '0');
+    const day = String(currDate.getDate()).padStart(2, '0');
+
+    const formattedDate = `${year}-${month}-${day}`;
+
+    const slotStart = new Date(`${selectedDate}T${startTime}`);
     const slotEnd = addMinutes(slotStart, duration);
-    const closingTimeObj = new Date(`2024-01-01T${closingTime}`);
+    const closingTimeObj = new Date(`${selectedDate}T${closingTime}`);
+    // console.log("SH Date ",Date()," ",selectedDate);
 
     // console.log("SH slotStart",slotStart);
     // console.log("SH slotEnd",slotEnd);
 
+    // console.log("SH is active? ",currDate, " SH ",slotStart)
     // Check if slot extends beyond closing time
     if (slotEnd > closingTimeObj) {
+      return false;
+    }
+
+    const hasElapsed = slotStart < currDate;
+    if(hasElapsed)
+    {
+      console.log("SH b");
       return false;
     }
 
     // Check for overlapping bookings
     // console.log("SH existingBookings ",existingBookings);
     return !existingBookings.some(booking => {
-      const bookingStart = new Date(`2024-01-01T${booking.start_time}`);
-      const bookingEnd = new Date(`2024-01-01T${booking.end_time}`);
+      const bookingStart = new Date(`${selectedDate}T${booking.start_time}`);
+      const bookingEnd = new Date(`${selectedDate}T${booking.end_time}`);
 
       return (slotStart < bookingEnd && slotEnd > bookingStart);
     });
@@ -159,7 +177,9 @@ export function TimeSlotSelector({
     return Math.round(totalPrice);
   };
 
-  const handleSlotConfirm = () => {
+  const handleSlotConfirm = async () => {
+    setBookingLoading(true);
+     await new Promise(resolve => setTimeout(resolve, 300)); //reduce the sleep time
     console.log("SH handing slot confirm ",selectedStartTime)
     if (selectedStartTime) {
       const endTime = format(addMinutes(new Date(`2024-01-01T${selectedStartTime}`), selectedDuration), 'HH:mm');
@@ -194,10 +214,10 @@ export function TimeSlotSelector({
   return (
     <div className="space-y-6">
       {/* Duration Selection */}
-      <Card>
+      <Card className="border-none shadow-soft dark:bg-secondary-800">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Timer className="w-5 h-5 text-green-600" />
+            <Timer className="w-5 h-5" />
             Select Duration
           </CardTitle>
         </CardHeader>
@@ -206,21 +226,33 @@ export function TimeSlotSelector({
             {durations.map((duration) => (
               <Button
                 key={duration}
-                variant={selectedDuration === duration ? "default" : "outline"}
+                variant={selectedDuration === duration ? 'default' : 'outline'}
                 onClick={() => setSelectedDuration(duration)}
-                className={`h-12 ${selectedDuration === duration ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                className={`h-12 text-sm sm:text-base ${
+                  selectedDuration === duration
+                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-400'
+                    : 'border-gray-300 dark:border-secondary-700 hover:bg-green-50 dark:hover:bg-secondary-700'
+                }`}
+                aria-label={`Select ${duration} minutes duration`}
               >
                 <div className="text-center">
                   <div className="font-semibold">{duration}min</div>
                   <div className="text-xs opacity-80">
-                    {duration === 60 ? '1 hour' : 
-                     duration === 90 ? '1.5 hours' : 
-                     duration === 120 ? '2 hours' :
-                     duration === 150 ? '2.5 hours' :
-                     duration === 180 ? '3 hours' :
-                     duration === 210 ? '3.5 hours' :
-                     duration === 240 ? '4 hours' :
-                     '4.5 hours'}
+                    {duration === 60
+                      ? '1 hour'
+                      : duration === 90
+                      ? '1.5 hours'
+                      : duration === 120
+                      ? '2 hours'
+                      : duration === 150
+                      ? '2.5 hours'
+                      : duration === 180
+                      ? '3 hours'
+                      : duration === 210
+                      ? '3.5 hours'
+                      : duration === 240
+                      ? '4 hours'
+                      : '4.5 hours'}
                   </div>
                 </div>
               </Button>
@@ -230,60 +262,65 @@ export function TimeSlotSelector({
       </Card>
 
       {/* Time Slot Selection */}
-      <Card>
+      <Card className="border-none shadow-soft dark:bg-secondary-800">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-green-600" />
+          <CardTitle className="flex items-center gap-2 ">
+            <Clock className="w-5 h-5" />
             Select Starting Time
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {timeSlots.filter((time) => isSlotAvailable(time, selectedDuration)).length === 0 && (
+              <div className="text-center py-8 text-gray-500 dark:text-secondary-400">
+                <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No available slots for {selectedDuration} minutes duration on this date</p>
+                <p className="text-sm">Try selecting a shorter duration or different date</p>
+              </div>
+            )}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            
             {timeSlots.map((time) => {
-              const isAvailable = isSlotAvailable(time, selectedDuration);
-              const isSelected = selectedStartTime === time;
-              const price = calculatePrice(time, selectedDuration);
+              const isAvailable = isSlotAvailable(time, selectedDuration)
+              const isSelected = selectedStartTime === time
+              const price = calculatePrice(time, selectedDuration)
 
               return (
                 <Button
                   key={time}
-                  variant={isSelected ? "default" : "outline"}
+                  variant={isSelected ? 'default' : 'outline'}
                   size="sm"
                   disabled={!isAvailable}
                   onClick={() => setSelectedStartTime(time)}
-                  className={`h-16 flex flex-col ${
-                    isSelected ? 'bg-green-600 hover:bg-green-700' : ''
+                  className={`h-16 flex flex-col text-sm sm:text-base ${
+                    isSelected
+                      ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700'
+                      : 'border-gray-300 dark:border-secondary-700 hover:bg-green-50 dark:hover:bg-secondary-700'
                   } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  aria-label={`Select time slot starting at ${time}`}
                 >
                   <div className="font-semibold">{time}</div>
                   <div className="text-xs opacity-80">
                     {isAvailable ? (
                       <span className="flex items-center">
-                        <IndianRupee className="w-3 h-3" />
+                        <IndianRupee className="w-3 h-3 mr-1" />
                         {price}
                       </span>
                     ) : (
-                      ''
+                      'booked'
                     )}
                   </div>
                 </Button>
-              );
+              )
             })}
           </div>
+
           
-          {timeSlots.filter(time => isSlotAvailable(time, selectedDuration)).length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>No available slots for {selectedDuration} minutes duration on this date</p>
-              <p className="text-sm">Try selecting a shorter duration</p>
-            </div>
-          )}
         </CardContent>
       </Card>
 
       {/* Booking Confirmation */}
       {selectedStartTime && (
-        <Card className="border-green-200 bg-gradient-to-r from-green-50 to-green-100">
+        <Card className="border-green-400 bg-gradient-to-r from-green-50 to-green-100">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
               <div className="space-y-2">
@@ -291,28 +328,36 @@ export function TimeSlotSelector({
                 <div className="space-y-1 text-sm">
                   <p className="flex items-center text-gray-700">
                     <Clock className="w-4 h-4 mr-2" />
-                    {selectedStartTime} - {format(addMinutes(new Date(`2024-01-01T${selectedStartTime}`), selectedDuration), 'HH:mm')}
+                    {selectedStartTime} -{' '}
+                    {format(addMinutes(new Date(`2024-01-01T${selectedStartTime}`), selectedDuration), 'HH:mm')}
                   </p>
-                  <p className="flex items-center text-gray-700">
+                  <p className="flex items-center">
                     <Timer className="w-4 h-4 mr-2" />
-                    Duration: {selectedDuration} minutes ({selectedDuration/60} hours)
+                    Duration: {selectedDuration} minutes ({selectedDuration / 60} hours)
                   </p>
                 </div>
               </div>
-              
               <div className="text-right space-y-2">
-                <div className="flex items-center justify-end text-2xl font-bold text-green-800">
+                <div className="flex items-center justify-end text-2xl font-bold text-green-800 dark:text-green-800">
                   <IndianRupee className="w-6 h-6" />
                   {calculatePrice(selectedStartTime, selectedDuration)}
                 </div>
-                <p className="text-xs text-green-600">Total Amount</p>
-                
-                <Button 
+                <p className="text-xs text-green-600 dark:text-green-600">Total Amount</p>
+                <Button
                   onClick={handleSlotConfirm}
-                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 mt-3"
+                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 mt-3"
                   size="lg"
+                  disabled={bookingLoading}
+                  aria-label="Confirm booking"
                 >
-                  Confirm Booking
+                  {bookingLoading ? (
+                    <span className="flex items-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      Booking...
+                    </span>
+                  ) : (
+                    'Confirm Booking'
+                  )}
                 </Button>
               </div>
             </div>
@@ -320,5 +365,5 @@ export function TimeSlotSelector({
         </Card>
       )}
     </div>
-  );
+  )
 }

@@ -38,11 +38,12 @@ export function Header() {
  // Show nothing (or a placeholder) while auth is loading
   if (authLoading) {
     return (
+      
       <header className="border-b bg-white dark:bg-secondary-900 sticky top-0 z-50 shadow-soft">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link
             href="/"
-            className="text-2xl font-display text-primary-600 hover:text-primary-700 transition-colors duration-300"
+            className="text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors duration-300"
             aria-label="RCB CricketTurf Home"
           >
             RCB CricketTurf
@@ -61,7 +62,7 @@ export function Header() {
 
             <Link
               href="/"
-              className="text-2xl font-display text-primary-600 hover:text-primary-700 transition-colors duration-300"
+              className="text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors duration-300"
               aria-label="RCB CricketTurf Home"
             >
               RCB CricketTurf
@@ -172,7 +173,7 @@ export function Header() {
                   {user.role === 'admin' && (
                     <DropdownMenuItem asChild>
                       <Link
-                        href="/admin/turfs"
+                        href="/admin"
                         className="flex items-center cursor-pointer text-secondary-600 dark:text-secondary-100 hover:bg-primary-50 dark:hover:bg-secondary-700 transition-colors duration-200"
                       >
                         <Settings className="mr-2 h-4 w-4" />

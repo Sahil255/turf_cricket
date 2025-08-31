@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Search, Filter, MapPin, Calendar, Users, Clock, CheckCircle, Phone, Mail, Wifi, Car, Coffee, Shield, Loader2Icon } from 'lucide-react'
+import { Search, Filter, MapPin, Calendar, Users, Clock, CheckCircle, Phone, Mail, Wifi, Car, Coffee, Shield, Loader2Icon, ChevronLeft, ChevronRight, MessageCircle, Star, ShowerHead, Zap, Lightbulb } from 'lucide-react'
 import { Turf } from '@/types'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast'
+
 
 export default function TurfsPage() {
   const [turfs, setTurfs] = useState<Turf[]>([])
@@ -17,7 +19,25 @@ export default function TurfsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedLocation, setSelectedLocation] = useState('')
  const router = useRouter();
-  useEffect(() => {
+ const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isOpen, setIsOpen] = useState(false);
+  const sampleTurf: Turf = {
+    id: '',
+    name: '',
+    location: '',
+    description: '',
+    images: [],
+    opening_time: '',
+    closing_time: '',
+    active: false,
+    amenities: [],
+    created_at: '',
+    updated_at: ''
+  };
+  const [curTurf,setCurTurf] = useState<Turf>(sampleTurf);
+  
+   useEffect(() => {
+   
     // const isDarkMode = document.documentElement.classList.contains('dark');
 
     // if (isDarkMode) {
@@ -25,8 +45,30 @@ export default function TurfsPage() {
     // } else {
     //   console.log('Currently in light mode');
     // }
-    fetchTurfs()
+    fetchTurfs();
   }, [])
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % curTurf.images.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [curTurf?.images.length]);
+
+    // Check if turf is currently open
+  useEffect(() => {
+    const checkOpenStatus = () => {
+      const now = new Date();
+      const currentTime = now.getHours() * 100 + now.getMinutes();
+      const openTime = parseInt(curTurf.opening_time.replace(':', ''));
+      const closeTime = parseInt(curTurf.closing_time.replace(':', ''));
+      
+      setIsOpen(currentTime >= openTime && currentTime <= closeTime && curTurf.active);
+    };
+
+    checkOpenStatus();
+    const interval = setInterval(checkOpenStatus, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [curTurf?.opening_time, curTurf.closing_time, curTurf.active]);
 
   const handleClick = (turfId: string) => {
     setLoading(true);
@@ -37,16 +79,24 @@ export default function TurfsPage() {
 
   const fetchTurfs = async () => {
     try {
-      console.log("redirecting..");
       setLoading(true)
       const response = await fetch('/api/turfs')
       if (response.ok) {
         const data = await response.json()
         
         setTurfs(data)
+        setCurTurf(data[0]);
         //  if (data && data.length === 1) {
         //   router.push(`/turfs/${data[0].id}`);
         // }
+      }
+      else{
+        console.error('Error fetching turfs');
+        toast({
+          title: "Error",
+          description: 'Failed to load the page',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error fetching turfs:', error)
@@ -64,24 +114,24 @@ export default function TurfsPage() {
 
   const locations = [...new Set(turfs.map(turf => turf.location))]
 
-  // if (loading) {
-  //   return (
-  //     <div className="container mx-auto px-4 py-8">
-  //       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  //         {Array.from({ length: 6 }).map((_, i) => (
-  //           <Card key={i} className="animate-pulse">
-  //             <div className="h-48 bg-gray-200" />
-  //             <CardContent className="p-4">
-  //               <div className="h-4 bg-gray-200 rounded mb-2" />
-  //               <div className="h-3 bg-gray-200 rounded mb-2" />
-  //               <div className="h-3 bg-gray-200 rounded w-2/3" />
-  //             </CardContent>
-  //           </Card>
-  //         ))}
-  //       </div>
-  //     </div>
-  //   )
-  // }
+  if (loading) {
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <div className="h-48 bg-gray-200" />
+                <CardContent className="p-4">
+                  <div className="h-4 bg-gray-200 rounded mb-2" />
+                  <div className="h-3 bg-gray-200 rounded mb-2" />
+                  <div className="h-3 bg-gray-200 rounded w-2/3" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )
+    }
 
   const amenityIcons: { [key: string]: any } = {
     'WiFi': Wifi,
@@ -91,179 +141,325 @@ export default function TurfsPage() {
     'Floodlights': Clock,
   }
 
+  const getAmenityIcon = (amenity: string) => {
+    const amenityLower = amenity.toLowerCase();
+    if (amenityLower.includes('parking')) return <Car className="w-6 h-6" />;
+    if (amenityLower.includes('wifi')) return <Wifi className="w-6 h-6" />;
+    if (amenityLower.includes('changing') || amenityLower.includes('shower')) return <ShowerHead className="w-6 h-6" />;
+    if (amenityLower.includes('refreshment') || amenityLower.includes('cafe') || amenityLower.includes('food')) return <Coffee className="w-6 h-6" />;
+    if (amenityLower.includes('seating') || amenityLower.includes('seat')) return <Users className="w-6 h-6" />;
+    if (amenityLower.includes('security')) return <Shield className="w-6 h-6" />;
+    if (amenityLower.includes('light') || amenityLower.includes('flood')) return <Lightbulb className="w-6 h-6" />;
+    if (amenityLower.includes('washroom') || amenityLower.includes('toilet')) return <ShowerHead className="w-6 h-6" />;
+    return <Star className="w-6 h-6" />;
+  };
+
+  const handleLocationClick = () => {
+    const encodedLocation = encodeURIComponent(curTurf.location);
+    window.open(`https://maps.google.com/?q=${encodedLocation}`, '_blank');
+  };
+
+  const handleBookNow = () => {
+    window.open('/booking', '_blank');
+  };
+
+  const handleCall = () => {
+    if (curTurf.contact_phone) {
+      window.open(`tel:${curTurf.contact_phone}`);
+    }
+  };
+
+  const handleEmail = () => {
+    if (curTurf.contact_email) {
+      window.open(`mailto:${curTurf.contact_email}`);
+    }
+  };
+
+  const handleWhatsApp = () => {
+    if (curTurf.contact_phone) {
+      const cleanPhone = curTurf.contact_phone.replace(/[^\d]/g, '');
+      const message = encodeURIComponent(`Hi! I'm interested in booking ${curTurf.name}. Could you please share availability and pricing?`);
+      window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+    }
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % curTurf.images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + curTurf.images.length) % curTurf.images.length);
+  };
+
 
   return (
-    <div className="min-h-screen bg-secondary-50 dark:bg-secondary-900">
-      {/* <Header /> */}
-      <main className="container mx-auto px-4 py-12">
-        {/* Hero Section */}
-        {/* <section className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl md:text-5xl font-display text-primary-600 dark:text-primary-400 mb-4">
-            Book Your Perfect Turf
-          </h1>
-          <p className="text-lg text-secondary-600 dark:text-secondary-400 font-sans max-w-2xl mx-auto">
-            Discover top-quality cricket turfs near you. Reserve your spot for an unforgettable game!
-          </p>
-        </section> */}
-
-        {/* Turfs Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-8">
-          {turfs.map((turf) => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section with Image Carousel */}
+      <section className="relative h-[70vh] overflow-hidden">
+        <div className="relative w-full h-full">
+          {curTurf.images.map((image, index) => (
             <div
-              key={turf.id}
-              className="bg-white dark:bg-secondary-800 rounded-lg shadow-medium overflow-hidden hover:shadow-large transition-shadow duration-300 animate-slide-in"
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+              }`}
             >
               <img
-                src={turf.images[0]}
-                alt={`${turf.name} turf`}
-                className="w-full h-48 object-cover"
+                src={image}
+                alt={`${curTurf.name} - Image ${index + 1}`}
+                className="w-full h-full object-cover"
               />
-              <div className="p-6">
-                <h2 className="text-2xl font-display text-secondary-900 dark:text-secondary-100 mb-2">
-                  {turf.name}
-                </h2>
-                <p className="text-secondary-600 dark:text-secondary-400 font-sans mb-4 line-clamp-2">
-                  {turf.description}
-                </p>
-                <div className="flex items-center text-secondary-600 dark:text-secondary-400 font-sans mb-4">
-                  <MapPin className="h-5 w-5 mr-2" />
-                  <span>{turf.location}</span>
-                </div>
-                <Link href={`/turfs/${turf.id}`}>
-                  <Button
-                   className={`
-                     "text-lg px-8 py-6 hover:bg-primary-600 font-sans transition-colors duration-300 animate-bounce-in"
-                      ${loading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-primary text-white hover:bg-primary-700 active:bg-primary-800 shadow-lg hover:shadow-xl'
-                      }
-                    `}
-                    size="lg" 
-                    disabled = {loading}
-                    aria-label={`View details and book ${turf.name}`}
-                    onClick={()=>handleClick(turf.id)}
-                  >
-                    
-                    <Calendar className="h-5 w-5 mr-2" />
-                    {loading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>loading...</span>
-                  </div>
-                ) : (
-                  
-                  'View Details & Book')}
-                  </Button>
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-               <Card>
-              <CardHeader>
-                <CardTitle>Amenities</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {turf.amenities.map((amenity, index) => {
-                    const IconComponent = amenityIcons[amenity] || CheckCircle
-                    return (
-                      <div key={index} className="flex items-center">
-                        <IconComponent className="h-4 w-4 text-green-600 mr-2" />
-                        <span className="text-sm">{amenity}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-             {/* Additional Info */}
-            
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
-                    Capacity
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">22 Players</p>
-                  <p className="text-gray-600">Full cricket team capacity</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Clock className="h-5 w-5 mr-2" />
-                    Operating Hours
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-lg font-semibold">6:00 AM - 11:00 PM</p>
-                  <p className="text-gray-600">7 days a week</p>
-                </CardContent>
-              </Card>
-
-               {/* Contact Information */}
-            {(turf.contact_phone || turf.contact_email) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {turf.contact_phone && (
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 text-gray-600 mr-3" />
-                      <span>{turf.contact_phone}</span>
-                    </div>
-                  )}
-                  {turf.contact_email && (
-                    <div className="flex items-center">
-                      <Mail className="h-4 w-4 text-gray-600 mr-3" />
-                      <span>{turf.contact_email}</span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Policies */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Booking Policies</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-600 mr-3 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Free Cancellation</p>
-                    <p className="text-sm text-gray-600">Cancel up to 24 hours before your booking</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-600 mr-3 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Instant Confirmation</p>
-                    <p className="text-sm text-gray-600">Your booking is confirmed immediately</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <CheckCircle className="h-4 w-4 text-green-600 mr-3 mt-0.5" />
-                  <div>
-                    <p className="font-medium">Equipment Available</p>
-                    <p className="text-sm text-gray-600">Basic cricket equipment can be rented</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            </div>
             </div>
           ))}
-        </section>
-      </main>
+          
+          {/* Navigation Arrows */}
+          <button
+            onClick={prevImage}
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all duration-200"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <button
+            onClick={nextImage}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all duration-200"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
+
+          {/* Image Indicators */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            {curTurf.images.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Hero Content Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
+            <div className="container mx-auto px-6 pb-16">
+              <div className="text-white max-w-2xl">
+                <h1 className="text-5xl md:text-6xl font-bold mb-4 leading-tight">
+                  {curTurf.name}
+                </h1>
+                <div className="flex items-center mb-6 text-xl">
+                  <MapPin className="w-6 h-6 mr-2 text-green-400" />
+                  <button 
+                    onClick={handleLocationClick}
+                    className="hover:text-green-400 transition-colors duration-200 cursor-pointer underline"
+                  >
+                    {curTurf.location}
+                  </button>
+                </div>
+                <button
+                  onClick={()=> handleClick(curTurf.id)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-12 py-4 rounded-lg text-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-2xl"
+                >
+                  Book Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Info Bar */}
+      <section className="bg-white shadow-md border-b">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center space-x-8">
+              <div className="flex items-center">
+                <Clock className="w-5 h-5 mr-2 text-green-600" />
+                <span className="font-medium">
+                  {curTurf.opening_time} - {curTurf.closing_time}
+                </span>
+                <span className={`ml-3 px-3 py-1 rounded-full text-sm font-medium ${
+                  isOpen ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {isOpen ? 'Open Now' : 'Closed'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {curTurf.contact_phone && (
+                <button
+                  onClick={handleCall}
+                  className="flex items-center bg-blue-600 hover:bg-primary-700 text-accent px-4 py-2 rounded-lg transition-all duration-200"
+                >
+                  <Phone className="w-4 h-4 mr-2" />
+                  Call
+                </button>
+              )}
+              {curTurf.contact_phone && (
+                <button
+                  onClick={handleWhatsApp}
+                  className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-200"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  WhatsApp
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-12">
+        <div className="grid lg:grid-cols-3 gap-12">
+          
+          {/* About Section */}
+          <div className="lg:col-span-2">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">About Our Ground</h2>
+            <p className="text-lg text-gray-700 leading-relaxed mb-8">
+              {curTurf.description}
+            </p>
+            
+            {/* Amenities */}
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Facilities & Amenities</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {curTurf.amenities.map((amenity, index) => (
+                <div
+                  key={index}
+                  className="flex items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                >
+                  <div className="text-green-600 mr-3">
+                    {getAmenityIcon(amenity)}
+                  </div>
+                  <span className="font-medium text-gray-800">{amenity}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sidebar - Booking & Contact */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-lg p-8 sticky top-6">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Ready to Play?</h3>
+                <p className="text-gray-600">Book your slot now and enjoy the best cricket experience!</p>
+              </div>
+
+              <button
+                onClick={()=>handleClick(curTurf.id)}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg mb-6"
+              >
+                Book Now
+              </button>
+
+              <div className="border-t pt-6">
+                <h4 className="font-semibold text-gray-900 mb-4">Contact Information</h4>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <Clock className="w-5 h-5 mr-3 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Operating Hours</p>
+                      <p className="text-sm text-gray-600">{curTurf.opening_time} - {curTurf.closing_time}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <MapPin className="w-5 h-5 mr-3 text-gray-500" />
+                    <div>
+                      <p className="font-medium">Location</p>
+                      <button 
+                        onClick={handleLocationClick}
+                        className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 underline"
+                      >
+                        {curTurf.location}
+                      </button>
+                    </div>
+                  </div>
+
+                  {curTurf.contact_phone && (
+                    <div className="flex items-center">
+                      <Phone className="w-5 h-5 mr-3 text-gray-500" />
+                      <div>
+                        <p className="font-medium">Phone</p>
+                        <button
+                          onClick={handleCall}
+                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                        >
+                          {curTurf.contact_phone}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {curTurf.contact_email && (
+                    <div className="flex items-center">
+                      <Mail className="w-5 h-5 mr-3 text-gray-500" />
+                      <div>
+                        <p className="font-medium">Email</p>
+                        <button
+                          onClick={handleEmail}
+                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                        >
+                          {curTurf.contact_email}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex space-x-3 mt-6 pt-6 border-t">
+                  {curTurf.contact_phone && (
+                    <button
+                      onClick={handleCall}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center"
+                    >
+                      <Phone className="w-4 h-4 mr-2" />
+                      Call
+                    </button>
+                  )}
+                  {curTurf.contact_phone && (
+                    <button
+                      onClick={handleWhatsApp}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      WhatsApp
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Book Now Button for Mobile */}
+      {/* <div className="fixed bottom-6 right-6 lg:hidden z-50">
+        <button
+          onClick={handleBookNow}
+          className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-2xl transition-all duration-200 transform hover:scale-110"
+        >
+          <Calendar className="w-6 h-6" />
+        </button>
+      </div> */}
+
+      {/* Status Indicator */}
+      <div className="fixed top-6 right-6 z-40">
+        <div className={`px-4 py-2 rounded-full text-white font-medium ${
+          isOpen ? 'bg-green-600' : 'bg-red-600'
+        }`}>
+          <div className="flex items-center">
+            <div className={`w-2 h-2 rounded-full mr-2 ${
+              isOpen ? 'bg-green-300' : 'bg-red-300'
+            } animate-pulse`}></div>
+            {isOpen ? 'Open Now' : 'Closed'}
+          </div>
+        </div>
+      </div>
     </div>
-  )
-}
+  );
+};
 /*Uncomment below code and remove above code to make multiple turfs*/ 
 // import Image from 'next/image'
 // import Link from 'next/link'

@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 // import QRCode from 'qrcode.react'
 import QRCode from 'react-qr-code';
+import { useRouter } from 'next/navigation';
 
 interface Booking {
   id: string;
@@ -50,19 +51,29 @@ export default function AdminBookings() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const { user, firebaseUser } = useAuth()
+  const { user, firebaseUser,authLoading } = useAuth()
   // const [expandedQRCodes, setExpandedQRCodes] = useState({})
    const [paymentLoading, setPaymentLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [expandedQRCodes, setExpandedQRCodes] = useState<ExpandedQRCodes>({});
-
+    const router = useRouter()
   useEffect(() => {
-    fetchBookings();
+    // fetchBookings();
     if (localStorage.theme === 'dark') {
       document.documentElement.classList.add('dark');
     }
-  }, []);
+    if (!authLoading && user) {
+      fetchBookings()
+    } else if (!authLoading && !user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please sign in to view your bookings.',
+        variant: 'destructive',
+      })
+      router.push('/')
+    }
+  }, [authLoading, user]);
 
   const fetchBookings = async () => {
     try {
@@ -216,10 +227,12 @@ export default function AdminBookings() {
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch =
       booking.turf.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.user.phone.includes(searchTerm);
+      booking.id.toLowerCase().includes(searchTerm.toLowerCase());// ||
+      // booking.user.phone.includes(searchTerm);
 
-    const matchesStatus = statusFilter === 'all' || booking.booking_status === statusFilter;
+    // const matchesStatus = statusFilter === 'all' || booking.booking_status === statusFilter;
+
+    const matchesStatus = statusFilter === 'all' || getDisplayStatus(booking) === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
@@ -245,9 +258,9 @@ export default function AdminBookings() {
       <main className="container mx-auto px-4 py-8 sm:py-10">
         {/* Header Section */}
         <section className="mb-8 text-center">
-          <h1 className="text-3xl sm:text-4xl font-display text-primary dark:text-primary-foreground mb-2">
+          {/* <h1 className="text-3xl sm:text-4xl font-display text-primary dark:text-primary-foreground mb-2">
             My Bookings
-          </h1>
+          </h1> */}
           <p className="text-base sm:text-lg text-muted-foreground font-sans max-w-md mx-auto">
             View and manage your turf bookings seamlessly.
           </p>
@@ -265,7 +278,7 @@ export default function AdminBookings() {
               aria-label="Search bookings by ID"
             />
           </div>
-          <select
+          {/* <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 bg-card text-foreground border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base font-sans"
@@ -276,7 +289,7 @@ export default function AdminBookings() {
             <option value="completed">Completed</option>
             <option value="pending">Pending</option>
             <option value="cancelled">Cancelled</option>
-          </select>
+          </select> */}
         </section>
 
         {/* Bookings List */}

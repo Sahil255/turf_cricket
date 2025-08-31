@@ -130,6 +130,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 })
     }
 
+    console.log("SH inserted ",booking);
+    console.log("SH inserted booking.id ",booking.id);
+    // const {booking_id} =booking.json();
+    // console.log("SH inserted booking_id ",booking_id);
+    console.log("SH inserted booking['id'] ",booking['id']);
+
     return NextResponse.json(booking)
   } catch (error) {
     console.error('API error:', error)

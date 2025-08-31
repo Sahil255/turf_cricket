@@ -41,17 +41,33 @@ export default function AdminTurfs() {
     fetchTurfs();
   }, []);
 
+
   const fetchTurfs = async () => {
     try {
-      const response = await fetch('/api/turfs');
-      const { turfs } = await response.json();
-      setTurfs(turfs || []);
+      setLoading(true)
+      const response = await fetch('/api/turfs')
+      if (response.ok) {
+        const data = await response.json()
+        
+        setTurfs(data)
+        //  if (data && data.length === 1) {
+        //   router.push(`/turfs/${data[0].id}`);
+        // }
+      }
+      else{
+        console.error('Error fetching turfs');
+        toast({
+          title: "Error",
+          description: 'Failed to load the page',
+          variant: "destructive",
+        });
+      }
     } catch (error) {
-      console.error('Error fetching turfs:', error);
+      console.error('Error fetching turfs:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
