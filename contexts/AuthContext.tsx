@@ -8,7 +8,7 @@ import { User } from '@/types'
 interface AuthContextType {
   firebaseUser: FirebaseUser | null
   user: User | null
-  loading: boolean
+  authLoading: boolean
   signOut: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -18,7 +18,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null)
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(true)
 
   const fetchUserData = async (firebaseUser: FirebaseUser) => {
     try {
@@ -59,14 +59,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null)
       }
       
-      setLoading(false)
+      setAuthLoading(false)
     })
 
     return unsubscribe
   }, [])
 
   return (
-    <AuthContext.Provider value={{ firebaseUser, user, loading, signOut, refreshUser }}>
+    <AuthContext.Provider value={{ firebaseUser, user, authLoading, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

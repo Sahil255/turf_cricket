@@ -18,8 +18,22 @@ export default function TurfsPage() {
   const [selectedLocation, setSelectedLocation] = useState('')
  const router = useRouter();
   useEffect(() => {
+    // const isDarkMode = document.documentElement.classList.contains('dark');
+
+    // if (isDarkMode) {
+    //   console.log('Currently in dark mode');
+    // } else {
+    //   console.log('Currently in light mode');
+    // }
     fetchTurfs()
   }, [])
+
+  const handleClick = (turfId: string) => {
+    setLoading(true);
+    router.push(`/turfs/${turfId}`);
+    setLoading(false);
+    
+  };
 
   const fetchTurfs = async () => {
     try {
@@ -50,24 +64,24 @@ export default function TurfsPage() {
 
   const locations = [...new Set(turfs.map(turf => turf.location))]
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
-              <div className="h-48 bg-gray-200" />
-              <CardContent className="p-4">
-                <div className="h-4 bg-gray-200 rounded mb-2" />
-                <div className="h-3 bg-gray-200 rounded mb-2" />
-                <div className="h-3 bg-gray-200 rounded w-2/3" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="container mx-auto px-4 py-8">
+  //       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  //         {Array.from({ length: 6 }).map((_, i) => (
+  //           <Card key={i} className="animate-pulse">
+  //             <div className="h-48 bg-gray-200" />
+  //             <CardContent className="p-4">
+  //               <div className="h-4 bg-gray-200 rounded mb-2" />
+  //               <div className="h-3 bg-gray-200 rounded mb-2" />
+  //               <div className="h-3 bg-gray-200 rounded w-2/3" />
+  //             </CardContent>
+  //           </Card>
+  //         ))}
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   const amenityIcons: { [key: string]: any } = {
     'WiFi': Wifi,
@@ -127,6 +141,7 @@ export default function TurfsPage() {
                     size="lg" 
                     disabled = {loading}
                     aria-label={`View details and book ${turf.name}`}
+                    onClick={()=>handleClick(turf.id)}
                   >
                     
                     <Calendar className="h-5 w-5 mr-2" />
