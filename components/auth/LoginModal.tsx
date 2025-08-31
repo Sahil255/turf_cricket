@@ -1,17 +1,10 @@
 'use client'
 
-import { SetStateAction, useState } from 'react'
+import { useState, useEffect } from 'react'
+import { X, Phone, MessageSquare, User } from 'lucide-react'
+import { toast, useToast } from '@/hooks/use-toast'
 import { signInWithPhoneNumber, RecaptchaVerifier, ConfirmationResult } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-// import { PhoneInput } from '@/components/ui/phone-input'
-import { useToast } from '@/hooks/use-toast'
-import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/style.css'; // Don't forget the CSS import
-
 
 interface LoginModalProps {
   isOpen: boolean
@@ -25,9 +18,69 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
+  const [phoneError, setPhoneError] = useState<string | null>(null)
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null)
   const { toast } = useToast()
-  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  // Detect keyboard open/close on mobile
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleViewportChange = () => {
+      // Check if visual viewport is available (modern browsers)
+      if (window.visualViewport) {
+        const heightDiff = window.innerHeight - window.visualViewport.height
+        setIsKeyboardOpen(heightDiff > 150) // Threshold for keyboard detection
+      }
+    }
+
+    const handleResize = () => {
+      // Fallback for older browsers
+      const heightDiff = window.screen.height - window.innerHeight
+      setIsKeyboardOpen(heightDiff > 200)
+    }
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange)
+    } else {
+      window.addEventListener('resize', handleResize)
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange)
+      } else {
+        window.removeEventListener('resize', handleResize)
+      }
+    }
+  }, [isOpen])
+
+  // Handle input focus with improved scrolling
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      })
+    }, 300)
+  }
+
+  const handlePhoneChange = (value: string) => {
+    // Remove any non-digit characters
+    const digitsOnly = value.replace(/\D/g, '')
+    
+    if (digitsOnly.length <= 10) {
+      setPhoneNumber(digitsOnly)
+      setPhoneError(
+        digitsOnly.length === 0 
+          ? null 
+          : digitsOnly.length === 10 
+            ? null 
+            : "Phone number must be 10 digits"
+      )
+    }
+  }
 
   const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
@@ -40,6 +93,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   }
 
+
+
   const sendOTP = async () => {
     if (!phoneNumber || phoneNumber.length !== 10) {
       toast({
@@ -47,6 +102,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         description: 'Please enter a valid 10-digit phone number',
         variant: 'destructive',
       })
+      setPhoneError('Please enter a valid 10-digit phone number')
       return
     }
 
@@ -76,7 +132,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   }
 
-  const verifyOTP = async () => {
+
+   const verifyOTP = async () => {
     if (!otp || !confirmationResult) return
 
     setLoading(true)
@@ -115,8 +172,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setLoading(false)
     }
   }
+ 
 
-  const createProfile = async () => {
+ const createProfile = async () => {
     if (!name.trim()) {
       toast({
         title: 'Name Required',
@@ -167,13 +225,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
   }
 
+
+
   const resetForm = () => {
     setStep('phone')
     setPhoneNumber('')
     setOtp('')
     setName('')
     setEmail('')
-    setConfirmationResult(null)
+    setPhoneError(null)
   }
 
   const handleClose = () => {
@@ -181,169 +241,260 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     resetForm()
   }
 
-   const handleInputFocus = (e: { target: any }) => {
-    const input = e.target;
-    const dialogContent = input.closest('.overflow-y-auto'); // Find the scrollable DialogContent
+  if (!isOpen) return null
 
-    if (!input || !dialogContent) return; // Exit if elements are not found
+  return (
+    <>
+    <div id="recaptcha-container"></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+      
+      {/* Modal */}
+      <div 
+        className={`
+          relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl
+          transition-all duration-300 ease-out
+          ${isKeyboardOpen 
+            ? 'max-h-[60vh] transform -translate-y-8' 
+            : 'max-h-[85vh] transform translate-y-0'
+          }
+        `}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center space-x-3">
+            {step === 'phone' && <Phone className="w-6 h-6 text-blue-600" />}
+            {step === 'otp' && <MessageSquare className="w-6 h-6 text-green-600" />}
+            {step === 'profile' && <User className="w-6 h-6 text-purple-600" />}
+            <h2 className="text-xl font-semibold text-gray-900">
+              {step === 'phone' && 'Login with Phone'}
+              {step === 'otp' && 'Verify OTP'}
+              {step === 'profile' && 'Complete Profile'}
+            </h2>
+          </div>
+          <button
+            onClick={handleClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
 
-    setTimeout(() => {
-      // Check if visualViewport is supported (modern browsers)
-      if (window.visualViewport) {
-        const viewportHeight = window.visualViewport.height;
-        const inputRect = input.getBoundingClientRect();
-        const dialogRect = dialogContent.getBoundingClientRect();
-
-        // Only scroll if the input is below the viewport's visible area
-        if (inputRect.bottom > viewportHeight) {
-          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-      } else {
-        // Fallback for older browsers
-        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 250); // Reduced delay for faster response
-  };
-  
-  // const handlePhoneChange = (value: string) => {
-  //   // For India (+91), ensure the number part (excluding +91) is up to 10 digits
-  //   const numberWithoutCode = value.startsWith("+91") ? value.slice(3) : value;
-  //   if (numberWithoutCode.length <= 10) {
-  //     setPhoneNumber(value);
-  //   }
-  // };
-
-
-  const handlePhoneChange = (value: string) => {
-  const numberWithoutCode = value.startsWith("+91") ? value.slice(3) : value;
-  if (/^\d{0,10}$/.test(numberWithoutCode)) {
-    setPhoneNumber(value);
-    setPhoneError(numberWithoutCode.length === 10 ? null : "Phone number must be 10 digits");
-  }
-};
-return (
-<><div id="recaptcha-container"></div>
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-md p-4 sm:p-6 overflow-y-auto max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">
-            {step === "phone" && "Login with Phone"}
-            {step === "otp" && "Verify OTP"}
-            {step === "profile" && "Complete Your Profile"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          {step === "phone" && (
-            <>
+        {/* Content */}
+        <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(85vh-120px)]">
+          {step === 'phone' && (
+            <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm sm:text-base">
+                <label className="block text-sm font-medium text-gray-700">
                   Phone Number
-                </Label>
-                <PhoneInput
-                  key="phone"
-                  country="in" // Default to India (+91)
-                  onlyCountries={["in"]} // Restrict to India only
-                  disableCountryCode={true} // Keep +91 visible
-                  disableDropdown={true} // Hide dropdown to lock country
-                  placeholder="Enter your phone number"
-                  value={phoneNumber}
-                  onChange={handlePhoneChange}
-                  onFocus={handleInputFocus}
-                  inputProps={{
-                    id: "phone",
-                    className: "w-full p-2 text-sm sm:text-base",
-                    style: { paddingLeft: "48px" }, // Prevent overlap with flag
-                    "aria-label": "Phone number",
-                  }}
-                  containerClass="w-full"
-                />
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-600">🇮🇳 +91</span>
+                  </div>
+                  <input
+                    type="tel"
+                    placeholder="Enter 10-digit number"
+                    value={phoneNumber}
+                    onChange={(e) => handlePhoneChange(e.target.value)}
+                    onFocus={handleInputFocus}
+                    className={`
+                      w-full pl-20 pr-4 py-4 text-lg rounded-xl border-2 
+                      transition-all duration-200 bg-gray-50
+                      ${phoneError 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                      }
+                      focus:outline-none focus:shadow-lg
+                    `}
+                    maxLength={10}
+                  />
+                </div>
+                {phoneError && (
+                  <p className="text-sm text-red-600 mt-1">{phoneError}</p>
+                )}
               </div>
-              <Button
+              
+              <button
                 onClick={sendOTP}
-                disabled={loading}
-                className="w-full h-12 text-sm sm:text-base"
+                disabled={loading || phoneNumber.length !== 10}
+                className={`
+                  w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200
+                  ${loading || phoneNumber.length !== 10
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg hover:shadow-xl'
+                  }
+                `}
               >
-                {loading ? "Sending OTP..." : "Send OTP"}
-              </Button>
-            </>
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Sending OTP...</span>
+                  </div>
+                ) : (
+                  'Send OTP'
+                )}
+              </button>
+            </div>
           )}
 
-          {step === "otp" && (
-            <>
+          {step === 'otp' && (
+            <div className="space-y-4">
+              <div className="text-center space-y-2">
+                <p className="text-gray-600">
+                  Enter the 6-digit code sent to
+                </p>
+                <p className="font-semibold text-lg">+91 {phoneNumber}</p>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="otp" className="text-sm sm:text-base">
-                  Enter OTP
-                </Label>
-                <Input
-                  id="otp"
+                <label className="block text-sm font-medium text-gray-700">
+                  OTP Code
+                </label>
+                <input
+                  type="tel"
                   placeholder="Enter 6-digit OTP"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '')
+                    if (value.length <= 6) setOtp(value)
+                  }}
                   onFocus={handleInputFocus}
+                  className="w-full px-4 py-4 text-xl text-center rounded-xl border-2 border-gray-200 
+                           focus:border-green-500 focus:outline-none focus:bg-white focus:shadow-lg 
+                           bg-gray-50 transition-all duration-200 tracking-widest"
                   maxLength={6}
-                  className="w-full p-2 text-sm sm:text-base"
                 />
               </div>
-              <Button
-                onClick={verifyOTP}
-                disabled={loading}
-                className="w-full h-12 text-sm sm:text-base"
-              >
-                {loading ? "Verifying..." : "Verify OTP"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setStep("phone")}
-                className="w-full h-12 text-sm sm:text-base"
-              >
-                Change Phone Number
-              </Button>
-            </>
+
+              <div className="space-y-3">
+                <button
+                  onClick={verifyOTP}
+                  disabled={loading || otp.length !== 6}
+                  className={`
+                    w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200
+                    ${loading || otp.length !== 6
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-lg hover:shadow-xl'
+                    }
+                  `}
+                >
+                  {loading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Verifying...</span>
+                    </div>
+                  ) : (
+                    'Verify OTP'
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setStep('phone')}
+                  className="w-full py-3 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
+                  Change Phone Number
+                </button>
+              </div>
+            </div>
           )}
 
-          {step === "profile" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm sm:text-base">
-                  Full Name *
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="Enter your full name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full p-2 text-sm sm:text-base"
-                />
+          {step === 'profile' && (
+            <div className="space-y-4">
+              <div className="text-center space-y-2">
+                <p className="text-gray-600">Almost done! Complete your profile</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm sm:text-base">
-                  Email (Optional)
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onFocus={handleInputFocus}
-                  className="w-full p-2 text-sm sm:text-base"
-                />
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onFocus={handleInputFocus}
+                    className="w-full px-4 py-4 text-lg rounded-xl border-2 border-gray-200 
+                             focus:border-purple-500 focus:outline-none focus:bg-white focus:shadow-lg 
+                             bg-gray-50 transition-all duration-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={handleInputFocus}
+                    className="w-full px-4 py-4 text-lg rounded-xl border-2 border-gray-200 
+                             focus:border-purple-500 focus:outline-none focus:bg-white focus:shadow-lg 
+                             bg-gray-50 transition-all duration-200"
+                  />
+                </div>
               </div>
-              <Button
+
+              <button
                 onClick={createProfile}
-                disabled={loading}
-                className="w-full h-12 text-sm sm:text-base"
+                disabled={loading || !name.trim()}
+                className={`
+                  w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200
+                  ${loading || !name.trim()
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 shadow-lg hover:shadow-xl'
+                  }
+                `}
               >
-                {loading ? "Creating Account..." : "Complete Registration"}
-              </Button>
-            </>
+                {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Creating Account...</span>
+                  </div>
+                ) : (
+                  'Complete Registration'
+                )}
+              </button>
+            </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
-
+      </div>
+    </div>
     </>
-  );
+  )
+}
+
+// Demo component to test the modal
+export default function LoginDemo() {
+  const [isOpen, setIsOpen] = useState(false)
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="text-center space-y-6">
+        <h1 className="text-3xl font-bold text-gray-900">
+          Mobile-Friendly Login Modal
+        </h1>
+        <p className="text-gray-600 max-w-md">
+          This modal automatically adjusts when the mobile keyboard opens, ensuring the input fields remain visible and accessible.
+        </p>
+        <button
+          onClick={() => setIsOpen(true)}
+          className="px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg 
+                   hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
+        >
+          Open Login Modal
+        </button>
+      </div>
+
+      <LoginModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
+    </div>
+  )
 }
