@@ -66,6 +66,7 @@ export default function AdminBookings() {
 
   const fetchBookings = async () => {
     try {
+      setLoading(true);
       console.log("SH fetching booking details");
       let headers: HeadersInit = {};
       if (user) {
@@ -74,7 +75,7 @@ export default function AdminBookings() {
       } else {
         console.warn('No user authenticated, skipping Authorization header');
       }
-      const response = await fetch('/api/all_bookings', { headers })
+      const response = await fetch('/api/bookings', { headers })
       if (response.ok) {
         const bookings = await response.json()
         setBookings(bookings || []);
@@ -224,7 +225,18 @@ export default function AdminBookings() {
   });
   // Derive single status (payment pending -> Pending, else use booking_status)
   const getDisplayStatus = (booking: Booking) => {
-    return booking.payment_status === 'pending' ? 'Pending' : booking.booking_status
+    let retVal = "pending";
+    if(booking.payment_status == 'pending' && booking.booking_status=="confirmed"){
+      retVal = 'pending';
+    }
+    if(booking.booking_status == 'cancelled' ){
+      retVal = "cancelled";
+    }
+    if ( booking.booking_status == 'completed' && booking.payment_status == 'completed'){
+      retVal = "completed";
+    }
+
+    return booking.payment_status === 'pending' ? (booking.booking_status=="cancelled" || booking.booking_status=="completed" )? booking.booking_status:'Pending' : booking.booking_status
   }
 
   return (

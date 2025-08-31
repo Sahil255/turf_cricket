@@ -14,17 +14,19 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { User, LogOut, Calendar, Settings, Menu, X } from 'lucide-react'
+import { useRouter } from 'next/navigation';
 
 export function Header() {
   const { user, signOut } = useAuth()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-
+  const router = useRouter();
   const handleSignOut = async () => {
     setLoading(true);
     await signOut()
     setIsMobileMenuOpen(false)
+     router.push(`/`);
     setLoading(false);
   }
 
@@ -216,17 +218,17 @@ export function Header() {
                       "text-secondary-600 border-primary-500 hover:bg-primary-50 dark:text-secondary-100 dark:border-primary-400 dark:hover:bg-secondary-700"
                       ${loading 
                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg hover:shadow-xl'
+                        : 'bg-primary text-white hover:bg-primary-700 active:bg-primary-800 shadow-lg hover:shadow-xl'
                       }
                     `}
                     
                     onClick={handleSignOut}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    `{loading ? (
+                    {loading ? (
                       "Signing Out .."
                     ):
-                    ("Sign Out")}`
+                    ("Sign Out")}
                   </Button>
                 </>
               )}
