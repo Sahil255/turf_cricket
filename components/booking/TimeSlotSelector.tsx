@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, IndianRupee, Timer } from 'lucide-react';
+import { ChartColumnStackedIcon, Clock, IndianRupee, Timer } from 'lucide-react';
 import { format, addMinutes, parseISO, isAfter, isBefore } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -119,7 +119,7 @@ export function TimeSlotSelector({
     }
 
     // Check for overlapping bookings
-    console.log("SH existingBookings ",existingBookings);
+    // console.log("SH existingBookings ",existingBookings);
     return !existingBookings.some(booking => {
       const bookingStart = new Date(`2024-01-01T${booking.start_time}`);
       const bookingEnd = new Date(`2024-01-01T${booking.end_time}`);
@@ -166,6 +166,7 @@ export function TimeSlotSelector({
       const totalAmount = calculatePrice(selectedStartTime, selectedDuration);
       console.log("SH handing slot confirm totalAmount ",totalAmount," selectedDuration " ,selectedDuration)
       onSlotSelect(selectedStartTime, endTime, totalAmount, selectedDuration);
+      console.log("in handleSlotCnfirm last");
     }
   };
 

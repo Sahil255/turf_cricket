@@ -19,10 +19,13 @@ export function Header() {
   const { user, signOut } = useAuth()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleSignOut = async () => {
+    setLoading(true);
     await signOut()
     setIsMobileMenuOpen(false)
+    setLoading(false);
   }
 
   const toggleMobileMenu = () => {
@@ -209,24 +212,42 @@ export function Header() {
                   )}
                   <Button
                     variant="outline"
-                    className="text-secondary-600 border-primary-500 hover:bg-primary-50 dark:text-secondary-100 dark:border-primary-400 dark:hover:bg-secondary-700"
+                    className={`
+                      "text-secondary-600 border-primary-500 hover:bg-primary-50 dark:text-secondary-100 dark:border-primary-400 dark:hover:bg-secondary-700"
+                      ${loading 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg hover:shadow-xl'
+                      }
+                    `}
+                    
                     onClick={handleSignOut}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    `{loading ? (
+                      "Signing Out .."
+                    ):
+                    ("Sign Out")}`
                   </Button>
                 </>
               )}
               {!user && (
-                <Button
+                <button
                   onClick={() => {
                     setShowLoginModal(true)
                     setIsMobileMenuOpen(false)
                   }}
-                  // className="bg-primary-500 text-white hover:bg-primary-600 font-sans"
-                  className="mb-2 text-white hover:text-secondary font-sans text-xs sm:text-sm"
+                  // className="bg-primary-600  font-semibold text-primary text-lg hover:bg-primary-600 font-sans"
+                 className={`
+                  max-lg w-12/12 py-3 rounded-xl font-semibold text-lg transition-all duration-200
+                  ${user
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-primary text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg hover:shadow-xl'
+                  }
+                `}
                   aria-label="Login"
-                />
+                >
+                  Login
+                  </button>
                   // Login
                 // </Button>
               )}

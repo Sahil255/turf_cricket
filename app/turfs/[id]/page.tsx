@@ -127,8 +127,9 @@ export default function TurfDetailsPage() {
     {
       setShowLoginModal(true);
     }
+    setLoading(true);
     console.log("SH slot selected!!!!");
-    setBookingLoading(true);
+    // setBookingLoading(true);
     try {
  
       console.log("in tme selct",turf?.id," duration ",duration);
@@ -152,7 +153,7 @@ export default function TurfDetailsPage() {
     //   const response = await fetch(`/api/pricing-slots/${turfId}/`);
       console.log("SH pricing list",response);
       const { data } = await response.json();
-      console.log("SH pricing slots",data);
+      console.log("SH pricing slots handle slot",data);
 
       if (!response.ok) {
         throw new Error(data || 'Failed to create booking');
@@ -164,7 +165,7 @@ export default function TurfDetailsPage() {
         description: `Your slot has been booked for ${startTime} - ${endTime}`,
       });
       }
-      
+      setLoading(false);
       // router.push('/');
     } catch (error) {
       console.error('SH Error creating booking:', error);
@@ -174,7 +175,8 @@ export default function TurfDetailsPage() {
         variant: 'destructive',
       });
     } finally {
-      setBookingLoading(false);
+      // setBookingLoading(false);
+      setLoading(false);
     }
   };
 

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Search, Filter, MapPin, Calendar, Users, Clock, CheckCircle, Phone, Mail, Wifi, Car, Coffee, Shield } from 'lucide-react'
+import { Search, Filter, MapPin, Calendar, Users, Clock, CheckCircle, Phone, Mail, Wifi, Car, Coffee, Shield, Loader2Icon } from 'lucide-react'
 import { Turf } from '@/types'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation';
@@ -24,6 +24,7 @@ export default function TurfsPage() {
   const fetchTurfs = async () => {
     try {
       console.log("redirecting..");
+      setLoading(true)
       const response = await fetch('/api/turfs')
       if (response.ok) {
         const data = await response.json()
@@ -116,11 +117,27 @@ export default function TurfsPage() {
                 </div>
                 <Link href={`/turfs/${turf.id}`}>
                   <Button
-                    size="lg" className="text-lg px-8 py-6 hover:bg-primary-600 font-sans transition-colors duration-300 animate-bounce-in"
+                   className={`
+                     "text-lg px-8 py-6 hover:bg-primary-600 font-sans transition-colors duration-300 animate-bounce-in"
+                      ${loading
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-primary text-white hover:bg-primary-700 active:bg-primary-800 shadow-lg hover:shadow-xl'
+                      }
+                    `}
+                    size="lg" 
+                    disabled = {loading}
                     aria-label={`View details and book ${turf.name}`}
                   >
+                    
                     <Calendar className="h-5 w-5 mr-2" />
-                    View Details & Book
+                    {loading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>loading...</span>
+                  </div>
+                ) : (
+                  
+                  'View Details & Book')}
                   </Button>
                 </Link>
               </div>
