@@ -47,6 +47,7 @@ export default function TurfsPage() {
     // }
     fetchTurfs();
   }, [])
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % curTurf.images.length);
@@ -278,14 +279,18 @@ export default function TurfsPage() {
                   {curTurf.opening_time} - {curTurf.closing_time}
                 </span>
                 <span className={`ml-3 px-3 py-1 rounded-full text-sm font-medium ${
-                  isOpen ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  isOpen && 'bg-green-100 text-green-800' 
                 }`}>
-                  {isOpen ? 'Open Now' : 'Closed'}
+                  {isOpen ? 'Open Now' : ''}
+                  
                 </span>
+                
               </div>
+              
             </div>
+            {(!isOpen && <p> closed but you can the book ground for tomorrow...</p>)}
             
-            <div className="flex items-center space-x-4">
+            {/* <div className="flex items-center space-x-4">
               {curTurf.contact_phone && (
                 <button
                   onClick={handleCall}
@@ -298,13 +303,13 @@ export default function TurfsPage() {
               {curTurf.contact_phone && (
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-all duration-200"
+                  className="flex items-center bg-green-100 border border-green-500 hover:bg-green-700 text-black px-4 py-2 rounded-lg transition-all duration-200"
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   WhatsApp
                 </button>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
       </section>

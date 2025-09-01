@@ -57,10 +57,7 @@ export function TimeSlotSelector({
     try {
         console.log("in tme selct",turfId);
       const response = await fetch(`/api/pricing-slots?turfId=${turfId}`);
-    //   const response = await fetch(`/api/pricing-slots/${turfId}/`);
-      console.log("SH pricing list",response);
       const { slots } = await response.json();
-      console.log("SH pricing slots",slots);
       setPricingSlots(slots || []);
     } catch (error) {
       console.error('Error fetching pricing slots:', error);
@@ -179,7 +176,7 @@ export function TimeSlotSelector({
 
   const handleSlotConfirm = async () => {
     setBookingLoading(true);
-     await new Promise(resolve => setTimeout(resolve, 300)); //reduce the sleep time
+    //  await new Promise(resolve => setTimeout(resolve, 30)); //reduce the sleep time
     console.log("SH handing slot confirm ",selectedStartTime)
     if (selectedStartTime) {
       const endTime = format(addMinutes(new Date(`2024-01-01T${selectedStartTime}`), selectedDuration), 'HH:mm');

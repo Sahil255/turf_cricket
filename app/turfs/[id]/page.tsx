@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast'
 // import { Turf, BookingRequest, Booking } from '@/types'
 import { TimeSlotSelector } from '@/components/booking/TimeSlotSelector'
 import { BookingRequest, Turf } from '@/types'
+import { BookingConfirmationDialog } from '@/components/booking/BookingConfirmationDiag'
 
 
 interface Booking {
@@ -45,6 +46,17 @@ export default function BookingPage() {
   const [paymentLoading, setPaymentLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<{
+    id: string
+    turf_name: string
+    booking_date: string
+    start_time: string
+    end_time: string
+    duration_minutes: number
+    total_amount: number
+    booking_status: string
+  } | null>(null)
 
   useEffect(() => {
     if (params.id) {
@@ -70,53 +82,6 @@ export default function BookingPage() {
     }
   }
 
-  const handleBookingRequest = async (bookingRequest: BookingRequest) => {
-    if (authLoading || !user) {
-      setShowLoginModal(true)
-      return
-    }
-
-    setBookingLoading(true)
-    try {
-      const token = await firebaseUser?.getIdToken()
-      const response = await fetch('/api/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...bookingRequest,
-          phone: `+91${user.phone}`, // Prepend +91 for Firebase
-        }),
-      })
-
-      if (response.ok) {
-        toast({
-          title: 'Booking Confirmed!',
-          description: 'Your turf has been booked successfully.',
-        })
-        router.push('/bookings')
-      } else {
-        const error = await response.json()
-        toast({
-          title: 'Booking Failed',
-          description: error.error || 'Failed to create booking',
-          variant: 'destructive',
-        })
-      }
-    } catch (error) {
-      console.error('Booking error:', error)
-      toast({
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setBookingLoading(false)
-    }
-  }
-
     // Validate phone number
   const validatePhoneNumber = (phone: string) => {
     const cleanPhone = phone.replace(/[^0-9+]/g, '') // Remove non-numeric characters except +
@@ -125,6 +90,45 @@ export default function BookingPage() {
     return null // Invalid phone number
   }
 
+  const handlePaymentResults = async (
+    bookingId: string,
+    selectedDate:string,
+    startTime: string,
+    endTime: string,
+    totalAmount: number,
+    duration: number,
+    turfName: string,
+    status:boolean,
+    token:string
+  ) => {
+    const updatePayment = await fetch(`/api/bookings/${bookingId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        payment_status:"failed",
+        booking_status:"cancelled"
+      }),
+    })
+    if(updatePayment.ok)
+    {
+      //TODO:Use the payment dialog box to show payment was success but couldn't save it to database call customer care
+      
+    }
+     setBookingDetails({
+      id: bookingId,
+      turf_name: turfName || 'Turf',
+      booking_date: selectedDate,
+      start_time: startTime,
+      end_time: endTime,
+      duration_minutes: duration,
+      total_amount: totalAmount,
+      booking_status: status?'Confirmed':'Failed',
+    })
+    setShowConfirmationDialog(true)
+  }
 
   const handleSlotSelect = async (
     startTime: string,
@@ -148,8 +152,8 @@ export default function BookingPage() {
 
     setBookingLoading(true)
     let booking: { [x: string]: any; id: any };
+    const token = await firebaseUser?.getIdToken()
     try {
-      const token = await firebaseUser?.getIdToken()
       const bookingResponse = await fetch('/api/bookings', {
         method: 'POST',
         headers: {
@@ -171,11 +175,6 @@ export default function BookingPage() {
       booking = await bookingResponse.json();
 
       console.log("turf SH inserted ",booking);
-      console.log("turf SH inserted booking.id ",booking.id);
-      // const {booking_id} =booking.json();
-      // console.log("turf SH inserted booking_id ",booking_id);
-      console.log("turf SH inserted booking['id'] ",booking['id']);
-
 
       // console.log("SH booking_id ",booking_id.id);
 
@@ -193,7 +192,7 @@ export default function BookingPage() {
       })
 
       
-      
+      console.log("SH order response",orderResponse);
 
       if (!orderResponse.ok) {
         setBookingLoading(false);
@@ -201,7 +200,7 @@ export default function BookingPage() {
       }
 
       const { order_id } = await orderResponse.json()
-
+      
       // Initialize Razorpay checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -230,43 +229,68 @@ export default function BookingPage() {
             })
 
             if (verifyResponse.ok) {
-              const paymentData = await verifyResponse.json()
+                const paymentData = await verifyResponse.json()
               
-              //store payment id aswell
-              const updatePayment = await fetch(`/api/bookings/${booking.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                payment_status:"completed",
-                booking_status:"confirmed"
-              }),
-            })
-            if(updatePayment.ok)
-            {
-              toast({
-                title: 'Payment Successful!',
-                description: `Your booking for ${turf?.name} is confirmed.`,
+                //store payment id aswell
+                const updatePayment = await fetch(`/api/bookings/${booking.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  payment_status:"completed",
+                  booking_status:"confirmed",
+                  rzr_order_id:response.razorpay_order_id,
+                  rzr_payment_id:response.razorpay_payment_id,
+                  rzr_signature:response.razorpay_signature,
+                }),
               })
-            }
-              router.push('/bookings')
+              if(updatePayment.ok)
+              {
+                setBookingDetails({
+                  id: booking.id,
+                  turf_name: turf?.name || 'Turf',
+                  booking_date: selectedDate,
+                  start_time: startTime,
+                  end_time: endTime,
+                  duration_minutes: duration,
+                  total_amount: totalAmount,
+                  booking_status: 'Confirmed',
+                })
+                setShowConfirmationDialog(true)
+              }
+              else{
+                console.log("SH Payment success but failed to update the DB");
+                 //TODO:Use the payment dialog box to show payment was success but couldn't save it to database call customer care
+              }
+              // router.push('/bookings')
             } else {
               const error = await verifyResponse.json()
+               
+
               throw new Error(error.error || 'Payment verification failed')
             }
           } catch (error) {
             console.error('SH: Payment verification error:', error)
-            toast({
-              title: 'Payment Failed',
-              description: 'Failed to verify payment. Please try again.',
-              variant: 'destructive',
-            })
+            handlePaymentResults( 
+                booking.id,selectedDate,startTime,endTime,totalAmount,duration,turf?.name??'RCB Turf',false,token ?? '');
+                
           } finally {
             setBookingLoading(false)
           }
         },
+         modal: {
+            ondismiss: function() {
+              // This callback is triggered when the modal is closed by the user
+              console.log(" SH !!! Payment dismissed by user");
+              handlePaymentResults( 
+                booking.id,selectedDate,startTime,endTime,totalAmount,duration,turf?.name??'RCB Turf',false,token ?? '');
+                
+              // setPaymentStatus('failed');
+              // setErrorMessage('Payment was cancelled.');
+            },
+          },
         prefill: {
           name: user.name || '',
           contact: `+91${user.phone}`,
@@ -275,9 +299,22 @@ export default function BookingPage() {
           color: '#16a34a', // bg-green-600
         },
       }
+      try{
+        const rzp = new (window as any).Razorpay(options)
 
-      const rzp = new (window as any).Razorpay(options)
-      rzp.open()
+         rzp.on('payment.failed', function (response: any) {
+          // This is the specific event for all failure cases, including user exit
+          console.log("Payment failed:", response);
+          handlePaymentResults( 
+                booking.id,selectedDate,startTime,endTime,totalAmount,duration,turf?.name??'RCB Turf',false,token ?? '');
+                
+        });
+        
+        rzp.open()
+      } catch (error)
+      {
+        console.error("SH OPtion booking error ",error);
+      }
     } catch (error) {
       console.error('SH: Booking error:', error)
       toast({
@@ -287,6 +324,7 @@ export default function BookingPage() {
       })
     } finally {
       setBookingLoading(false)
+      setLoading(false)
     }
   }
 
@@ -341,6 +379,17 @@ export default function BookingPage() {
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
       />
+
+      {bookingDetails && (
+        <BookingConfirmationDialog
+          isOpen={showConfirmationDialog}
+          onClose={() => {
+            setShowConfirmationDialog(false)
+            router.push('/bookings')
+          }}
+          booking={bookingDetails}
+        />
+      )}
     </>
   )
 }

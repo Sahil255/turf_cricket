@@ -33,7 +33,7 @@ export default function AdminTurfs() {
     description: '',
     images: '',
     opening_time: '06:00',
-    closing_time: '22:00',
+    closing_time: '21:00',
   });
   const { toast } = useToast();
 

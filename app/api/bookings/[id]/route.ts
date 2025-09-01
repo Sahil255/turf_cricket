@@ -124,13 +124,16 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const { booking_status, payment_status } = body;
+    const { booking_status, payment_status,rzr_order_id,rzr_payment_id,rzr_signature } = body;
 
     const { data: booking, error } = await supabase
       .from('bookings')
       .update({
         booking_status,
         payment_status,
+        rzr_order_id,
+        rzr_payment_id,
+        rzr_signature,
       })
       .eq('id', params.id)
       .select(`

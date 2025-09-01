@@ -20,6 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 // import QRCode from 'qrcode.react'
 import QRCode from 'react-qr-code';
 import { useRouter } from 'next/navigation';
+import { BookingConfirmationDialog } from '@/components/booking/BookingConfirmationDiag';
 
 interface Booking {
   id: string;
@@ -51,13 +52,24 @@ export default function AdminBookings() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const { user, firebaseUser,authLoading } = useAuth()
+  const { user, firebaseUser, authLoading } = useAuth()
   // const [expandedQRCodes, setExpandedQRCodes] = useState({})
-   const [paymentLoading, setPaymentLoading] = useState<Record<string, boolean>>({});
+  const [paymentLoading, setPaymentLoading] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const [expandedQRCodes, setExpandedQRCodes] = useState<ExpandedQRCodes>({});
-    const router = useRouter()
+  const [showConfirmationDialog, setShowConfirmationDialog] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<{
+    id: string
+    turf_name: string
+    booking_date: string
+    start_time: string
+    end_time: string
+    duration_minutes: number
+    total_amount: number
+    booking_status: string
+  } | null>(null)
+  const router = useRouter()
   useEffect(() => {
     // fetchBookings();
     if (localStorage.theme === 'dark') {
@@ -180,10 +192,10 @@ export default function AdminBookings() {
         setError(`Payment failed: ${response.error.description}`);
       })
       razorpay.open()
-    } catch (error:unknown) {
-       const err = error as Error; 
+    } catch (error: unknown) {
+      const err = error as Error;
       console.error('Razorpay payment error:', error)
-      setError(err.message   || 'Error initiating payment')
+      setError(err.message || 'Error initiating payment')
     } finally {
       setPaymentLoading((prev) => ({ ...prev, [booking.id]: false }))
     }
@@ -194,18 +206,18 @@ export default function AdminBookings() {
   // const toggleQRCode = (id: string) => {
   //   setExpandedQRCodes((prev) => ({ ...prev, [id]: prev[id] }))
   // }
-  
+
   const toggleQRCode = (id: string) => {
-  setExpandedQRCodes((prev) => ({
-    ...prev,
-    [id]: !prev[id], // Toggles the boolean value for the given ID
-  }));
-};
+    setExpandedQRCodes((prev) => ({
+      ...prev,
+      [id]: !prev[id], // Toggles the boolean value for the given ID
+    }));
+  };
 
   // Truncate UUID for display
   const truncateId = (id: string | any[]) => `${id.slice(0, 8)}...`
 
- type BadgeVariant = "default" | "destructive" | "secondary" | "outline" | "success" | "warning" | null | undefined;
+  type BadgeVariant = "default" | "destructive" | "secondary" | "outline" | "success" | "warning" | null | undefined;
 
 
   const getStatusBadgeVariant = (status: string): BadgeVariant => {
@@ -222,13 +234,25 @@ export default function AdminBookings() {
         return 'secondary'
     }
   }
-
+  const onBookingCardClick = (booking: Booking) =>{
+     setBookingDetails({
+        id: booking.id,
+        turf_name: booking.turf.name || 'Turf',
+        booking_date: booking.booking_date,
+        start_time: booking.start_time,
+        end_time: booking.end_time,
+        duration_minutes: booking.duration_minutes,
+        total_amount: booking.total_amount,
+        booking_status: booking.booking_status == 'cancelled'?'Failed':booking.booking_status,
+      })
+      setShowConfirmationDialog(true);
+  }
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch =
       booking.turf.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       booking.id.toLowerCase().includes(searchTerm.toLowerCase());// ||
-      // booking.user.phone.includes(searchTerm);
+    // booking.user.phone.includes(searchTerm);
 
     // const matchesStatus = statusFilter === 'all' || booking.booking_status === statusFilter;
 
@@ -239,46 +263,47 @@ export default function AdminBookings() {
   // Derive single status (payment pending -> Pending, else use booking_status)
   const getDisplayStatus = (booking: Booking) => {
     let retVal = "pending";
-    if(booking.payment_status == 'pending' && booking.booking_status=="confirmed"){
+    if (booking.payment_status == 'pending' && booking.booking_status == "confirmed") {
       retVal = 'pending';
     }
-    if(booking.booking_status == 'cancelled' ){
+    if (booking.booking_status == 'cancelled') {
       retVal = "cancelled";
     }
-    if ( booking.booking_status == 'completed' && booking.payment_status == 'completed'){
+    if (booking.booking_status == 'completed' && booking.payment_status == 'completed') {
       retVal = "completed";
     }
 
-    return booking.payment_status === 'pending' ? (booking.booking_status=="cancelled" || booking.booking_status=="completed" )? booking.booking_status:'Pending' : booking.booking_status
+    return booking.payment_status === 'pending' ? (booking.booking_status == "cancelled" || booking.booking_status == "completed") ? booking.booking_status : 'Pending' : booking.booking_status
   }
 
   return (
-    <div className="min-h-screen bg-background dark:bg-background">
+    <>
+      <div className="min-h-screen bg-background dark:bg-background">
 
-      <main className="container mx-auto px-4 py-8 sm:py-10">
-        {/* Header Section */}
-        <section className="mb-8 text-center">
-          {/* <h1 className="text-3xl sm:text-4xl font-display text-primary dark:text-primary-foreground mb-2">
+        <main className="container mx-auto px-4 py-8 sm:py-10">
+          {/* Header Section */}
+          <section className="mb-8 text-center">
+            {/* <h1 className="text-3xl sm:text-4xl font-display text-primary dark:text-primary-foreground mb-2">
             My Bookings
           </h1> */}
-          <p className="text-base sm:text-lg text-muted-foreground font-sans max-w-md mx-auto">
-            View and manage your turf bookings seamlessly.
-          </p>
-        </section>
+            <p className="text-base sm:text-lg text-muted-foreground font-sans max-w-md mx-auto">
+              View and manage your turf bookings seamlessly.
+            </p>
+          </section>
 
-        {/* Filters */}
-        <section className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" />
-            <Input
-              placeholder="Search by Booking ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-card text-foreground border-border rounded-md text-sm sm:text-base font-sans"
-              aria-label="Search bookings by ID"
-            />
-          </div>
-          {/* <select
+          {/* Filters */}
+          <section className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" />
+              <Input
+                placeholder="Search by Booking ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-card text-foreground border-border rounded-md text-sm sm:text-base font-sans"
+                aria-label="Search bookings by ID"
+              />
+            </div>
+            {/* <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 bg-card text-foreground border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base font-sans"
@@ -290,149 +315,161 @@ export default function AdminBookings() {
             <option value="pending">Pending</option>
             <option value="cancelled">Cancelled</option>
           </select> */}
-        </section>
+          </section>
 
-        {/* Bookings List */}
-        <section className="space-y-4 sm:space-y-6">
-          {loading ? (
-            <div className="space-y-4 sm:space-y-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="bg-card border-border shadow-md animate-pulse">
-                  <CardContent className="p-4 sm:p-5">
-                    <div className="h-32 sm:h-36 bg-muted rounded-md"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-4 sm:space-y-6">
-              {filteredBookings.map((booking) => (
-                <Card
-                  key={booking.id}
-                  className="bg-card border-border shadow-md hover:shadow-lg transition-shadow duration-300"
-                >
-                  <CardContent className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                    {/* Booking Details */}
-                    <div className="col-span-1 sm:col-span-2 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-base sm:text-lg font-display text-foreground truncate">
-                          ID: {truncateId(booking.id)}
-                        </h3>
-                        <Badge
-                          variant={getStatusBadgeVariant(getDisplayStatus(booking))}
-                          className="text-xs sm:text-sm font-sans capitalize"
-                        >
-                          {getDisplayStatus(booking)}
-                        </Badge>
+          {/* Bookings List */}
+          <section className="space-y-4 sm:space-y-6">
+            {loading ? (
+              <div className="space-y-4 sm:space-y-6">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="bg-card border-border shadow-md animate-pulse">
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="h-32 sm:h-36 bg-muted rounded-md"></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4 sm:space-y-6">
+                {filteredBookings.map((booking) => (
+                  <Card
+                  onClick={()=>onBookingCardClick(booking)}
+                    key={booking.id}
+                    className="bg-card border-border shadow-md hover:shadow-lg transition-shadow duration-300"
+                  >
+                    <CardContent className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                      {/* Booking Details */}
+                      <div className="col-span-1 sm:col-span-2 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-base sm:text-lg font-display text-foreground truncate">
+                            ID: {truncateId(booking.id)}
+                          </h3>
+                          <Badge
+                            variant={getStatusBadgeVariant(getDisplayStatus(booking))}
+                            className="text-xs sm:text-sm font-sans capitalize"
+                          >
+                            {getDisplayStatus(booking)}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm sm:text-base">
+                          <div>
+                            <p className="text-muted-foreground font-sans flex items-center">
+                              <Calendar className="w-4 h-4 mr-1.5" />
+                              Date
+                            </p>
+                            <p className="font-semibold text-foreground">
+                              {format(new Date(booking.booking_date), 'MMM dd, yyyy')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground font-sans flex items-center">
+                              <Clock className="w-4 h-4 mr-1.5" />
+                              Time
+                            </p>
+                            <p className="font-semibold text-foreground">
+                              {booking.start_time} - {booking.end_time}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground font-sans flex items-center">
+                              <Clock className="w-4 h-4 mr-1.5" />
+                              Duration
+                            </p>
+                            <p className="font-semibold text-foreground">
+                              {booking.duration_minutes} min
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground font-sans flex items-center">
+                              <IndianRupee className="w-4 h-4 mr-1.5" />
+                              Amount
+                            </p>
+                            <p className="font-semibold text-foreground">
+                              ₹{booking.total_amount}
+                            </p>
+                          </div>
+                        </div>
+                        {/* {booking.payment_status === 'pending' && (
+                          <Button
+                            className="mt-3 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-sans text-sm sm:text-base rounded-md"
+
+                            onClick={() => handlePayNow(booking)}
+                            disabled={paymentLoading[booking.id] ?? false}
+                            aria-label="Pay now for this booking"
+                          >
+                            Pay Now
+                          </Button>
+                        )} */}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm sm:text-base">
-                        <div>
-                          <p className="text-muted-foreground font-sans flex items-center">
-                            <Calendar className="w-4 h-4 mr-1.5" />
-                            Date
-                          </p>
-                          <p className="font-semibold text-foreground">
-                            {format(new Date(booking.booking_date), 'MMM dd, yyyy')}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground font-sans flex items-center">
-                            <Clock className="w-4 h-4 mr-1.5" />
-                            Time
-                          </p>
-                          <p className="font-semibold text-foreground">
-                            {booking.start_time} - {booking.end_time}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground font-sans flex items-center">
-                            <Clock className="w-4 h-4 mr-1.5" />
-                            Duration
-                          </p>
-                          <p className="font-semibold text-foreground">
-                            {booking.duration_minutes} min
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground font-sans flex items-center">
-                            <IndianRupee className="w-4 h-4 mr-1.5" />
-                            Amount
-                          </p>
-                          <p className="font-semibold text-foreground">
-                            ₹{booking.total_amount}
-                          </p>
-                        </div>
-                      </div>
-                      {booking.payment_status === 'pending' && (
+                      {/* QR Code Section */}
+                      <div className="col-span-1 flex flex-col items-center sm:items-end justify-center">
                         <Button
-                          className="mt-3 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-sans text-sm sm:text-base rounded-md"
-                         
-                          onClick={() => handlePayNow(booking)}
-                          disabled={paymentLoading[booking.id] ?? false}
-                          aria-label="Pay now for this booking"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleQRCode(booking.id)}
+                          className="mb-2 text-muted-foreground hover:text-primary font-sans text-xs sm:text-sm"
+                          aria-label={expandedQRCodes[booking.id] ? 'Hide QR code' : 'Show QR code'}
                         >
-                          Pay Now
+                          {expandedQRCodes[booking.id] ? (
+                            <>
+                              Hide QR <ChevronUp className="w-4 h-4 ml-1" />
+                            </>
+                          ) : (
+                            <>
+                              Show QR <ChevronDown className="w-4 h-4 ml-1" />
+                            </>
+                          )}
                         </Button>
-                      )}
-                    </div>
-                    {/* QR Code Section */}
-                    <div className="col-span-1 flex flex-col items-center sm:items-end justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleQRCode(booking.id)}
-                        className="mb-2 text-muted-foreground hover:text-primary font-sans text-xs sm:text-sm"
-                        aria-label={expandedQRCodes[booking.id] ? 'Hide QR code' : 'Show QR code'}
-                      >
-                        {expandedQRCodes[booking.id] ? (
-                          <>
-                            Hide QR <ChevronUp className="w-4 h-4 ml-1" />
-                          </>
-                        ) : (
-                          <>
-                            Show QR <ChevronDown className="w-4 h-4 ml-1" />
-                          </>
+                        {expandedQRCodes[booking.id] && (
+                          <div className="animate-accordion-down">
+                            <QRCode
+                              value={booking.id}
+                              alphabetic={booking.id}
+                              title='RCB Cricket Turf'
+
+                              type='qr'
+                              size={80}
+                              bgColor="hsl(var(--card))"
+                              fgColor="hsl(var(--primary))"
+                              className="rounded-md border border-border"
+                              aria-label={`QR code for booking ${booking.id}`}
+                            />
+                          </div>
                         )}
-                      </Button>
-                      {expandedQRCodes[booking.id] && (
-                        <div className="animate-accordion-down">
-                          <QRCode
-                            value={booking.id}
-                            alphabetic={booking.id}
-                            title='RCB Cricket Turf'
-                            
-                            type='qr'
-                            size={80}
-                            bgColor="hsl(var(--card))"
-                            fgColor="hsl(var(--primary))"
-                            className="rounded-md border border-border"
-                            aria-label={`QR code for booking ${booking.id}`}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {filteredBookings.length === 0 && (
-                <Card className="bg-card border-border shadow-md text-center p-8 sm:p-10">
-                  <CardContent>
-                    <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg sm:text-xl font-display text-foreground mb-2">
-                      No Bookings Found
-                    </h3>
-                    <p className="text-sm sm:text-base text-muted-foreground font-sans">
-                      {searchTerm || statusFilter !== 'all'
-                        ? 'No bookings match your filters.'
-                        : 'No bookings have been made yet.'}
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-        </section>
-      </main>
-    </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {filteredBookings.length === 0 && (
+                  <Card className="bg-card border-border shadow-md text-center p-8 sm:p-10">
+                    <CardContent>
+                      <Calendar className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg sm:text-xl font-display text-foreground mb-2">
+                        No Bookings Found
+                      </h3>
+                      <p className="text-sm sm:text-base text-muted-foreground font-sans">
+                        {searchTerm || statusFilter !== 'all'
+                          ? 'No bookings match your filters.'
+                          : 'No bookings have been made yet.'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+          </section>
+        </main>
+      </div>
+      {bookingDetails && (
+        <BookingConfirmationDialog
+          isOpen={showConfirmationDialog}
+          onClose={() => {
+            setShowConfirmationDialog(false)
+            
+          }}
+          booking={bookingDetails}
+        />
+      )}
+    </>
   )
 }
