@@ -200,11 +200,27 @@ export function TimeSlotSelector({
       const endTime = format(addMinutes(new Date(`2024-01-01T${selectedStartTime}`), selectedDuration), 'HH:mm');
       const totalAmount = calculatePrice(selectedStartTime, selectedDuration);
       console.log("SH handing slot confirm totalAmount ",totalAmount," selectedDuration " ,selectedDuration)
+
+      onSlotSelect(selectedStartTime, endTime, totalAmount, selectedDuration);
+      console.log("in handleSlotCnfirm last tme");
+    }
+  };
+
+
+  const calculateAndProceed = async () => {
+    setBookingLoading(true);
+    //  await new Promise(resolve => setTimeout(resolve, 30)); //reduce the sleep time
+    console.log("SH handing slot confirm ",selectedStartTime)
+    
+    if (selectedStartTime) {
+      const endTime = format(addMinutes(new Date(`2024-01-01T${selectedStartTime}`), selectedDuration), 'HH:mm');
+      const totalAmount = calculatePrice(selectedStartTime, selectedDuration);
+      console.log("SH handing slot confirm totalAmount ",totalAmount," selectedDuration " ,selectedDuration)
       setTotalAmount(totalAmount);
       setSelectedEndDate(endTime);
       setBookingSummaryOpen(true);
-      onSlotSelect(selectedStartTime, endTime, totalAmount, selectedDuration);
-      console.log("in handleSlotCnfirm last");
+      // onSlotSelect(selectedStartTime, endTime, totalAmount, selectedDuration);
+      console.log("opened boking summary");
     }
   };
 
@@ -364,7 +380,7 @@ export function TimeSlotSelector({
                 </div>
                 <p className="text-xs text-green-600 dark:text-green-600">Total Amount</p> */}
                 <Button
-                  onClick={handleSlotConfirm}
+                  onClick={calculateAndProceed}
                   // onClick={()=>{setBookingSummaryOpen(true)}}
                   className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700  text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 mt-3"
                   size="lg"
