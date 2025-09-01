@@ -78,7 +78,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold text-green-400 mb-4">{curTurf.name}</h3>
+            <h3 className="text-xl font-bold text-red-400 mb-4">{curTurf.name}</h3>
             <p className="text-gray-300 mb-4">
              {curTurf.description}
             </p>
@@ -96,22 +96,22 @@ export function Footer() {
             <h4 className="font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2 text-gray-300">
               <li>
-                <Link href="/" className="hover:text-green-400 transition-colors">
+                <Link href="/" className="hover:text-red-400 transition-colors">
                   Home
                 </Link>
               </li>
               <li>
-                <Link href="/turfs" className="hover:text-green-400 transition-colors">
+                <Link href="/turfs" className="hover:text-red-400 transition-colors">
                   Book Turf
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="hover:text-green-400 transition-colors">
+                <Link href="/about" className="hover:text-red-400 transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-green-400 transition-colors">
+                <Link href="/contact" className="hover:text-red-400 transition-colors">
                   Contact
                 </Link>
               </li>

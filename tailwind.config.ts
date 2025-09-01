@@ -20,6 +20,9 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      fontFamily: {
+        bebas: ['Bebas Neue', 'sans-serif'],
+      },
       
       colors: {
         background: 'hsl(var(--background))',

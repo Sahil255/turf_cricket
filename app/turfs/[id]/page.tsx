@@ -330,8 +330,15 @@ export default function BookingPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+      
+      <div className=" container mx-auto px-4 py-8 flex items-center justify-center min-h-screen  bg-black">
+        {/* Animated Background Pattern */}
+        <div className="fixed inset-0 opacity-5">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
       </div>
     )
   }
@@ -342,7 +349,7 @@ export default function BookingPage() {
         <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-secondary-100">Turf not found</h1>
         <Button
           onClick={() => router.push('/turfs')}
-          className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400"
+          className="bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400"
         >
           Back to Turfs
         </Button>
@@ -353,8 +360,16 @@ export default function BookingPage() {
 
  return (
     <>
-      <div className="container mx-auto px-4 py-8">
-        <h4 className="text-2x3 sm:text-1xl center font-sans text-gray-800 dark:text-secondary-100 mb-6">
+      
+    <div className=" n overflow-scroll container mx-auto px-10 py-16 bg-black">
+      {/* Animated Background Pattern */}
+      <div className="fixed inset-0 opacity-5">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+      </div>
+      <section className="relative  overflow-hidden">
+        <h4 className="text-2x3 sm:text-1xl center font-sans text-gray-50 dark:text-secondary-100 mb-6">
           Book Your Turf
         </h4>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -373,8 +388,9 @@ export default function BookingPage() {
             )}
           </div>
         </div>
+        </section>
       </div>
-
+     
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}

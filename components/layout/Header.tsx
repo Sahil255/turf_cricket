@@ -13,14 +13,35 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { User, LogOut, Calendar, Settings, Menu, X, BookOpen } from 'lucide-react'
+import { 
+  Menu, 
+  X, 
+  User, 
+  Calendar, 
+  Home, 
+  Settings, 
+  LogIn,
+  LogOut,
+  Crown,
+  Shield,
+  ChevronDown
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export function Header() {
+interface HeaderProps {
+  currentPage?: string;
+}
+
+
+const Header: React.FC<HeaderProps> = ({ 
+  currentPage = 'home',
+}) =>{
   const { user, signOut, authLoading } = useAuth()
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
   const handleSignOut = async () => {
     setLoading(true);
@@ -32,243 +53,288 @@ export function Header() {
 
 
 
+ useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navItems = [
+    { id: 'home', label: 'Home', icon: Home },
+    ...(user ? [
+      { id: 'profile', label: 'Profile', icon: User },
+      { id: 'bookings', label: 'My Bookings', icon: Calendar },
+      ...(user.role == 'admin' ? [{ id: 'admin', label: 'Admin Panel', icon: Settings }] : [])
+    ] : [])
+  ];
+
+  const handleNavClick = (pageId: string) => {
+    // onNavigate(pageId);
+    setIsMobileMenuOpen(false);
+    setShowUserDropdown(false);
+  };
+
+  const handleBookNow = () => {
+    // onNavigate('booking');
+    setIsMobileMenuOpen(false);
+  };
+
   const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+    setShowUserDropdown(false);
+  };
  // Show nothing (or a placeholder) while auth is loading
   if (authLoading) {
     return (
-      
-      <header className="border-b bg-white dark:bg-secondary-900 sticky top-0 z-50 shadow-soft">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors duration-300"
-            aria-label="RCB CricketTurf Home"
-          >
-            RCB CricketTurf
-          </Link>
+      <div className="container mx-auto px-4">
+      <div className="flex items-center justify-between h-16 md:h-20">
+      {/* Logo/Brand */}
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center border-2 border-red-400/50">
+            <Link href='/'> <Shield className="w-6 h-6 md:w-7 md:h-7 text-white" /></Link>
+          </div>
+          <div className="hidden sm:block">
+            <h1 className="text-xl md:text-2xl font-black text-white">
+              CRICKET<span className="text-red-500">ARENA</span>
+            </h1>
+            <p className="text-xs text-red-300 font-medium">CHAMPIONSHIP GROUND</p>
+          </div>
         </div>
-      </header>
-    )
+        </div>
+      </div>
+    );
   }
 
-  return (
+ return (
     <>
-      <header className="border-b bg-white dark:bg-secondary-900 sticky top-0 z-50 shadow-soft">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Left Section: Sign-In Button (non-logged-in) or Logo */}
-          <div className="flex items-center justify-between space-x-4">
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-black/95 backdrop-blur-md border-b border-red-500/30 shadow-lg' 
+          : 'bg-gradient-to-r from-black/80 to-gray-900/80 backdrop-blur-sm'
+      }`}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16 md:h-20">
+            
+            {/* Logo/Brand */}
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center border-2 border-red-400/50">
+                <Link href='/'> <Shield className="w-6 h-6 md:w-7 md:h-7 text-white" /></Link>
+              </div>
+              <div className="hidden sm:block">
+                <h1 className="text-xl md:text-2xl font-black text-white">
+                  CRICKET<span className="text-red-500">ARENA</span>
+                </h1>
+                <p className="text-xs text-red-300 font-medium">CHAMPIONSHIP GROUND</p>
+              </div>
+            </div>
 
-            <Link
-              href="/"
-              className="text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors duration-300"
-              aria-label="RCB CricketTurf Home"
-            >
-              RCB CricketTurf
-            </Link>
-
-          </div>
-
-
-          {/* Desktop Navigation (Logged-in Users) */}
-          {user && (
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link
-                href="/"
-                className="text-secondary-600 hover:text-primary-600 font-sans text-base transition-colors duration-300 animate-slide-in"
-              >
-                Home
-              </Link>
-              <Link
-                href="/turfs"
-                className="text-secondary-600 hover:text-primary-600 font-sans text-base transition-colors duration-300 animate-slide-in"
-              >
-                Book Now
-              </Link>
-              <Link
-                href="/bookings"
-                className="text-secondary-600 hover:text-primary-600 font-sans text-base transition-colors duration-300 animate-slide-in"
-              >
-                My Bookings
-              </Link>
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`relative px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center space-x-2 ${
+                      isActive
+                        ? 'text-white bg-red-600/20 border border-red-500/50'
+                        : 'text-gray-300 hover:text-white hover:bg-red-600/10'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                    {isActive && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-500 rounded-full"></div>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
-          )}
 
-          {/* Right Section: User Actions or Mobile Menu Button */}
-          <div className="flex items-center">
-
-            {!user && (
-              <Button
-                onClick={() => setShowLoginModal(true)}
-                className="bg-gray-700 text-white hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-blue-400 rounded-full px-4 py-2 font-sans font-semibold text-sm sm:text-base hover:scale-105 transition-all duration-300 animate-bounce-in"
-                aria-label="Sign in"
+            {/* Right Side Actions */}
+            <div className="flex items-center space-x-3">
+              
+              {/* Book Now Button - Always Visible */}
+              {/* <button
+                onClick={handleBookNow}
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg text-sm md:text-base"
               >
-                {(authLoading? 'loading' : "Sign In")}
-              </Button>
-            )}
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="relative h-10 w-10 rounded-full hover:bg-primary-50 transition-colors duration-300"
-                    aria-label="User menu"
+                <Calendar className="w-4 h-4 md:w-5 md:h-5 mr-2 inline" />
+                <span className="hidden sm:inline">CLAIM PITCH</span>
+                <span className="sm:hidden">BOOK</span>
+              </button> */}
+
+              {/* User Actions */}
+              {user ? (
+                <div className="relative">
+                  {/* Desktop User Menu */}
+                  <button
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                    className="hidden lg:flex items-center space-x-2 bg-black/60 border border-red-500/30 rounded-lg px-3 py-2 hover:border-red-500/60 transition-all duration-300"
                   >
-                    <Avatar className="h-10 w-10 bg-gray-200">
-                      <AvatarFallback className="bg-primary-500 text-primary-600">
-                        {user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="w-64 bg-white dark:bg-secondary-800 shadow-medium animate-fade-in"
-                  align="end"
-                  forceMount
-                >
-                  <div className="flex items-center justify-start gap-3 p-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-primary-100 text-primary-600">
-                        {user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium text-secondary-900 dark:text-secondary-100">
-                        {user.name}
-                      </p>
-                      <p className="w-[180px] truncate text-sm text-secondary-600 dark:text-secondary-400">
-                        {user.phone}
-                      </p>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator className="bg-secondary-200 dark:bg-secondary-700" />
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile"
-                      className="flex items-center cursor-pointer text-secondary-600 dark:text-secondary-100 hover:bg-primary-50 dark:hover:bg-secondary-700 transition-colors duration-200"
-                    >
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/bookings"
-                      className="flex items-center cursor-pointer text-secondary-600 dark:text-secondary-100 hover:bg-primary-50 dark:hover:bg-secondary-700 transition-colors duration-200"
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      My Bookings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/turfs"
-                      className="flex items-center cursor-pointer text-secondary-600 dark:text-secondary-100 hover:bg-primary-50 dark:hover:bg-secondary-700 transition-colors duration-200"
-                    >
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Book Now
-                    </Link>
-                  </DropdownMenuItem>
-                  {user.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href="/admin"
-                        className="flex items-center cursor-pointer text-secondary-600 dark:text-secondary-100 hover:bg-primary-50 dark:hover:bg-secondary-700 transition-colors duration-200"
+                    {user.name ? (
+                      <img 
+                        src={user.name} 
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full border-2 border-red-500"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                        <User className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                    <span className="text-white font-medium">{user.name.split(' ')[0]}</span>
+                    {user.role == 'admin' && <Crown className="w-4 h-4 text-red-400" />}
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </button>
+
+                  {/* User Dropdown */}
+                  {showUserDropdown && (
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-black border border-red-500/30 rounded-lg shadow-2xl py-2">
+                      <div className="px-4 py-2 border-b border-red-500/20">
+                        <p className="text-white font-semibold">{user.name}</p>
+                        <p className="text-red-300 text-sm">{user.email}</p>
+                      </div>
+                      <button
+                        onClick={handleSignOut}
+                        disabled={authLoading}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:text-white hover:bg-red-600/20 transition-colors duration-200 flex items-center space-x-2"
                       >
-                        <Settings className="mr-2 h-4 w-4" />
-                        Admin Panel
-                      </Link>
-                    </DropdownMenuItem>
+                        <LogOut className="w-4 h-4" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
                   )}
-                  <DropdownMenuSeparator className="bg-secondary-200 dark:bg-secondary-700" />
-                  <DropdownMenuItem
-                    onClick={handleSignOut}
-                    className="flex items-center cursor-pointer text-secondary-600 dark:text-secondary-100 hover:bg-primary-50 dark:hover:bg-secondary-700 transition-colors duration-200"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {authLoading ? 'Signing Out...' : 'Sign Out'}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
 
-            {/* Mobile Menu Button (Logged-in Users Only) */}
-            {/* {user && (
-              <button
-                className="md:hidden text-secondary-600 hover:text-primary-600 focus:outline-none"
-                onClick={toggleMobileMenu}
-                aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-                aria-expanded={isMobileMenuOpen}
-              >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            )} */}
+                  {/* Mobile Menu Button */}
+                  <button
+                    onClick={toggleMobileMenu}
+                    className="lg:hidden bg-black/60 border border-red-500/30 text-white p-2 rounded-lg hover:border-red-500/60 transition-all duration-300"
+                  >
+                    <Menu className="w-6 h-6" />
+                  </button>
+                </div>
+              ) : (
+                /* Login Button for Non-Logged Users */
+                <button
+                  onClick={()=>{setShowLoginModal(true)}}
+                  className="bg-black/60 border-2 border-red-500 text-red-400 hover:bg-red-600 hover:text-white px-4 md:px-6 py-2 md:py-3 rounded-lg font-bold transition-all duration-300 flex items-center space-x-2"
+                >
+                  <LogIn className="w-4 h-4 md:w-5 md:h-5" />
+                  <span>LOGIN</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Mobile Navigation Menu (Logged-in Users Only) */}
-        {user && isMobileMenuOpen && (
-          <nav className="md:hidden bg-white dark:bg-secondary-900 border-b shadow-soft animate-slide-in">
-            <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-              <Link
-                href="/"
-                className="text-secondary-600 hover:text-primary-600 font-sans text-lg transition-colors duration-300"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
-              <Link
-                href="/turfs"
-                className="text-secondary-600 hover:text-primary-600 font-sans text-lg transition-colors duration-300"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Book Now
-              </Link>
-              <Link
-                href="/bookings"
-                className="text-secondary-600 hover:text-primary-600 font-sans text-lg transition-colors duration-300"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                My Bookings
-              </Link>
-              <Link
-                href="/profile"
-                className="text-secondary-600 hover:text-primary-600 font-sans text-lg transition-colors duration-300"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Profile
-              </Link>
-              {user.role === 'admin' && (
-                <Link
-                  href="/admin/turfs"
-                  className="text-secondary-600 hover:text-primary-600 font-sans text-lg transition-colors duration-300"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Admin Panel
-                </Link>
-              )}
-              <Button
-                variant="outline"
-                className={`
-                  text-secondary-600 border-primary-500 hover:bg-primary-50 dark:text-secondary-100 dark:border-primary-400 dark:hover:bg-secondary-700
-                  ${authLoading ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'hover:scale-105 transition-all duration-300'}
-                `}
-                onClick={handleSignOut}
-                disabled={authLoading}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                {authLoading ? 'Signing Out...' : 'Sign Out'}
-              </Button>
-            </div>
-          </nav>
-        )}
+        {/* Animated Red Line */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-60"></div>
       </header>
 
+      {/* Mobile Slide-Out Menu */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          ></div>
+
+          {/* Menu Panel */}
+          <div className={`absolute right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-black to-gray-900 border-l border-red-500/30 transform transition-transform duration-300 ${
+            isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}>
+            
+            {/* Menu Header */}
+            <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-black text-xl">MENU</h3>
+                {user && (
+                  <div className="flex items-center mt-2">
+                    <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-3">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-sm">{user.name}</p>
+                      {user.role == 'admin' && (
+                        <div className="flex items-center">
+                          <Crown className="w-3 h-3 text-red-200 mr-1" />
+                          <span className="text-red-200 text-xs">ADMIN</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-white/80 hover:text-white p-2"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Menu Items */}
+            <div className="p-6 space-y-3">
+              {navItems.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`w-full flex items-center space-x-4 p-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
+                      isActive
+                        ? 'bg-red-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:text-white hover:bg-red-600/20 border border-transparent hover:border-red-500/30'
+                    }`}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span>{item.label}</span>
+                    {item.id === 'admin' && <Crown className="w-4 h-4 ml-auto text-red-400" />}
+                  </button>
+                );
+              })}
+
+              {/* Book Now in Mobile Menu */}
+              <button
+                onClick={handleBookNow}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-lg font-black text-lg transition-all duration-300 transform hover:scale-105 shadow-lg mt-6"
+              >
+                <Calendar className="w-5 h-5 mr-3 inline" />
+                CLAIM YOUR PITCH
+              </button>
+
+              {/* Logout for Mobile */}
+              {user && (
+                <button
+                  onClick={handleSignOut}
+                  disabled={authLoading}
+                  className={`
+                    w-full flex items-center space-x-4 p-4 mt-6 border-t border-red-500/20 text-gray-400 hover:text-red-400 transition-colors duration-300
+                    ${authLoading ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'hover:scale-105 transition-all duration-300'}
+                    `}
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>Logout</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
       />
     </>
-  )
-}
+  );
+};
+
+export default Header;

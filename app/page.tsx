@@ -6,11 +6,35 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Search, Filter, MapPin, Calendar, Users, Clock, CheckCircle, Phone, Mail, Wifi, Car, Coffee, Shield, Loader2Icon, ChevronLeft, ChevronRight, MessageCircle, Star, ShowerHead, Zap, Lightbulb } from 'lucide-react'
 import { Turf } from '@/types'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast'
+
+import { 
+  MapPin, 
+  Clock, 
+  Phone, 
+  Mail, 
+  MessageCircle,
+  Wifi,
+  Car,
+  ShowerHead,
+  Coffee,
+  Users,
+  Shield,
+  Zap,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Play,
+  Trophy,
+  Target,
+  Activity,
+  Lightbulb
+} from 'lucide-react';
+
 
 
 export default function TurfsPage() {
@@ -20,6 +44,7 @@ export default function TurfsPage() {
   const [selectedLocation, setSelectedLocation] = useState('')
  const router = useRouter();
  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   const [isOpen, setIsOpen] = useState(false);
   const sampleTurf: Turf = {
     id: '',
@@ -35,41 +60,19 @@ export default function TurfsPage() {
     updated_at: ''
   };
   const [curTurf,setCurTurf] = useState<Turf>(sampleTurf);
+  const [showStats, setShowStats] = useState(false);
   
    useEffect(() => {
-   
-    // const isDarkMode = document.documentElement.classList.contains('dark');
-
-    // if (isDarkMode) {
-    //   console.log('Currently in dark mode');
-    // } else {
-    //   console.log('Currently in light mode');
-    // }
     fetchTurfs();
   }, [])
 
-  useEffect(() => {
+ useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % curTurf.images.length);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(interval);
-  }, [curTurf?.images.length]);
+  }, [curTurf.images.length]);
 
-    // Check if turf is currently open
-  useEffect(() => {
-    const checkOpenStatus = () => {
-      const now = new Date();
-      const currentTime = now.getHours() * 100 + now.getMinutes();
-      const openTime = parseInt(curTurf.opening_time.replace(':', ''));
-      const closeTime = parseInt(curTurf.closing_time.replace(':', ''));
-      
-      setIsOpen(currentTime >= openTime && currentTime <= closeTime && curTurf.active);
-    };
-
-    checkOpenStatus();
-    const interval = setInterval(checkOpenStatus, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, [curTurf?.opening_time, curTurf.closing_time, curTurf.active]);
 
   const handleClick = (turfId: string) => {
     setLoading(true);
@@ -77,6 +80,7 @@ export default function TurfsPage() {
     setLoading(false);
     
   };
+
 
   const fetchTurfs = async () => {
     try {
@@ -106,41 +110,27 @@ export default function TurfsPage() {
     }
   }
 
-  const filteredTurfs = turfs.filter(turf => {
-    const matchesSearch = turf.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         turf.location.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesLocation = !selectedLocation || turf.location.toLowerCase().includes(selectedLocation.toLowerCase())
-    return matchesSearch && matchesLocation
-  })
+  
+  useEffect(() => {
+    const checkOpenStatus = () => {
+      const now = new Date();
+      const currentTime = now.getHours() * 100 + now.getMinutes();
+      const openTime = parseInt(curTurf.opening_time.replace(':', ''));
+      const closeTime = parseInt(curTurf.closing_time.replace(':', ''));
+      
+      setIsOpen(currentTime >= openTime && currentTime <= closeTime && curTurf.active);
+    };
 
-  const locations = [...new Set(turfs.map(turf => turf.location))]
+    checkOpenStatus();
+    const interval = setInterval(checkOpenStatus, 60000);
+    return () => clearInterval(interval);
+  }, [curTurf.opening_time, curTurf.closing_time, curTurf.active]);
 
-  if (loading) {
-      return (
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <div className="h-48 bg-gray-200" />
-                <CardContent className="p-4">
-                  <div className="h-4 bg-gray-200 rounded mb-2" />
-                  <div className="h-3 bg-gray-200 rounded mb-2" />
-                  <div className="h-3 bg-gray-200 rounded w-2/3" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )
-    }
+   useEffect(() => {
+    const timer = setTimeout(() => setShowStats(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const amenityIcons: { [key: string]: any } = {
-    'WiFi': Wifi,
-    'Parking': Car,
-    'Refreshments': Coffee,
-    'Security': Shield,
-    'Floodlights': Clock,
-  }
 
   const getAmenityIcon = (amenity: string) => {
     const amenityLower = amenity.toLowerCase();
@@ -150,7 +140,7 @@ export default function TurfsPage() {
     if (amenityLower.includes('refreshment') || amenityLower.includes('cafe') || amenityLower.includes('food')) return <Coffee className="w-6 h-6" />;
     if (amenityLower.includes('seating') || amenityLower.includes('seat')) return <Users className="w-6 h-6" />;
     if (amenityLower.includes('security')) return <Shield className="w-6 h-6" />;
-    if (amenityLower.includes('light') || amenityLower.includes('flood')) return <Lightbulb className="w-6 h-6" />;
+    if (amenityLower.includes('light') || amenityLower.includes('flood') || amenityLower.includes('led')) return <Zap className="w-6 h-6" />;
     if (amenityLower.includes('washroom') || amenityLower.includes('toilet')) return <ShowerHead className="w-6 h-6" />;
     return <Star className="w-6 h-6" />;
   };
@@ -165,6 +155,7 @@ export default function TurfsPage() {
   };
 
   const handleCall = () => {
+    console.log(curTurf.images);
     if (curTurf.contact_phone) {
       window.open(`tel:${curTurf.contact_phone}`);
     }
@@ -185,24 +176,62 @@ export default function TurfsPage() {
   };
 
   const nextImage = () => {
+    console.log(curTurf.images);
     setCurrentImageIndex((prev) => (prev + 1) % curTurf.images.length);
   };
 
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + curTurf.images.length) % curTurf.images.length);
   };
-
+  
+  if (loading) {
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <Card  className="animate-pulse">
+                <div className="h-80 bg-gray-200" />
+                <CardContent className="p-4">
+                  <div className="h-4 bg-grey-200 rounded mb-2/3" />
+                  <div className="h-3 bg-grey-200 rounded mb-2" />
+                  <div className="h-3 bg-grey-200 rounded w-2/3" />
+                  {/* CTA Button */}
+                  <div className="mb-8">
+                    <button
+                      onClick={()=> handleClick(curTurf.id)}
+                      className="group relative bg-gradient-to-r from-grey-600 to-grey-700 hover:from-grey-500 hover:to-grey-600 text-white px-12 py-5 rounded-xl text-2xl font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-grey-400 to-grey-500 rounded-xl "></div>
+                      <div className="relative flex items-center">
+                        <Play className="w-48 h-24 mr-3" />
+                      </div>
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+             
+          </div>
+        </div>
+      )
+    }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section with Image Carousel */}
-      <section className="relative h-[70vh] overflow-hidden">
-        <div className="relative w-full h-full">
+    <div className="min-h-screen bg-black">
+      {/* Animated Background Pattern */}
+      <div className="fixed inset-0 opacity-5">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+      </div>
+
+      {/* Hero Section */}
+      <section className="relative h-screen overflow-hidden">
+        {/* Image Carousel */}
+        <div className="absolute inset-0">
           {curTurf.images.map((image, index) => (
             <div
               key={index}
-              className={`absolute inset-0 transition-opacity duration-1000 ${
-                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+              className={`absolute inset-0 transition-all duration-1000 ${
+                index === currentImageIndex ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
               }`}
             >
               <img
@@ -212,170 +241,243 @@ export default function TurfsPage() {
               />
             </div>
           ))}
-          
-          {/* Navigation Arrows */}
-          <button
-            onClick={prevImage}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all duration-200"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <button
-            onClick={nextImage}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all duration-200"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
+        </div>
 
-          {/* Image Indicators */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {curTurf.images.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
+        {/* Diagonal Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-black/60 to-red-900/40"></div>
+        
+        {/* Navigation Arrows */}
+        {/* <button
+          onClick={prevImage}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-red-600/80 hover:bg-red-600 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 z-50"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button> */}
+        <button
+          onClick={nextImage}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-red-600/80 hover:bg-red-600 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 z-50"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </button>
 
-          {/* Hero Content Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
-            <div className="container mx-auto px-6 pb-16">
-              <div className="text-white max-w-2xl">
-                <h1 className="text-5xl md:text-6xl font-bold mb-4 leading-tight">
-                  {curTurf.name}
-                </h1>
-                <div className="flex items-center mb-6 text-xl">
-                  <MapPin className="w-6 h-6 mr-2 text-green-400" />
-                  <button 
-                    onClick={handleLocationClick}
-                    className="hover:text-green-400 transition-colors duration-200 cursor-pointer underline"
-                  >
-                    {curTurf.location}
-                  </button>
+        {/* Hero Content */}
+        <div className="relative z-10 h-full flex items-center">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl">
+              {/* Status Badge */}
+              <div className="mb-6">
+                {isOpen && <div className={`inline-flex items-center px-4 py-2 rounded-full font-bold text-sm ${
+                  isOpen 
+                    ? 'bg-red-600 text-white animate-pulse' 
+                    : 'bg-gray-800 text-gray-300'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full mr-2 ${
+                    isOpen ? 'bg-white' : 'bg-gray-500'
+                  } animate-pulse`}></div>
+                  {isOpen &&'LIVE & READY TO PLAY' }
                 </div>
+                }
+              </div>
+
+              {/* Main Title */}
+              <h1 className="text-6xl md:text-8xl font-black text-white mb-4 leading-none tracking-tight">
+                <span className="bg-gradient-to-r from-white to-red-300 bg-clip-text text-transparent">
+                  {curTurf.name.split(' ')[0]}
+                </span>
+                <br />
+                <span className="text-red-500">
+                  {curTurf.name.split(' ').slice(1).join(' ')}
+                </span>
+              </h1>
+
+              {/* Location */}
+              <div className="flex items-center mb-8 text-xl text-red-200">
+                <MapPin className="w-6 h-6 mr-3 text-red-500" />
+                <button 
+                  onClick={handleLocationClick}
+                  className="hover:text-white transition-colors duration-300 border-b border-red-500/50 hover:border-white"
+                >
+                  {curTurf.location}
+                </button>
+              </div>
+
+              {/* CTA Button */}
+              <div className="mb-8">
                 <button
                   onClick={()=> handleClick(curTurf.id)}
-                  className="bg-green-600 hover:bg-green-700 text-white px-12 py-4 rounded-lg text-xl font-semibold transition-all duration-200 transform hover:scale-105 shadow-2xl"
+                  className="group relative bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-12 py-5 rounded-xl text-2xl font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl"
                 >
-                  Book Now
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Info Bar */}
-      <section className="bg-white shadow-md border-b">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center">
-                <Clock className="w-5 h-5 mr-2 text-green-600" />
-                <span className="font-medium">
-                  {curTurf.opening_time} - {curTurf.closing_time}
-                </span>
-                <span className={`ml-3 px-3 py-1 rounded-full text-sm font-medium ${
-                  isOpen && 'bg-green-100 text-green-800' 
-                }`}>
-                  {isOpen ? 'Open Now' : ''}
-                  
-                </span>
-                
-              </div>
-              
-            </div>
-            {(!isOpen && <p> closed but you can the book ground for tomorrow...</p>)}
-            
-            {/* <div className="flex items-center space-x-4">
-              {curTurf.contact_phone && (
-                <button
-                  onClick={handleCall}
-                  className="flex items-center bg-blue-600 hover:bg-primary-700 text-accent px-4 py-2 rounded-lg transition-all duration-200"
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  Call
-                </button>
-              )}
-              {curTurf.contact_phone && (
-                <button
-                  onClick={handleWhatsApp}
-                  className="flex items-center bg-green-100 border border-green-500 hover:bg-green-700 text-black px-4 py-2 rounded-lg transition-all duration-200"
-                >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  WhatsApp
-                </button>
-              )}
-            </div> */}
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-12">
-        <div className="grid lg:grid-cols-3 gap-12">
-          
-          {/* About Section */}
-          <div className="lg:col-span-2">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">About Our Ground</h2>
-            <p className="text-lg text-gray-700 leading-relaxed mb-8">
-              {curTurf.description}
-            </p>
-            
-            {/* Amenities */}
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Facilities & Amenities</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {curTurf.amenities.map((amenity, index) => (
-                <div
-                  key={index}
-                  className="flex items-center p-4 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
-                >
-                  <div className="text-green-600 mr-3">
-                    {getAmenityIcon(amenity)}
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-red-500 rounded-xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                  <div className="relative flex items-center">
+                    <Play className="w-8 h-8 mr-3" />
+                    Book Now
                   </div>
-                  <span className="font-medium text-gray-800">{amenity}</span>
+                </button>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className={`bg-black/60 backdrop-blur-sm border border-red-500/30 rounded-lg p-4 transform transition-all duration-700 ${showStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                  <Trophy className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">24/7</div>
+                  <div className="text-red-200 text-sm">Premium Service</div>
                 </div>
-              ))}
+                <div className={`bg-black/60 backdrop-blur-sm border border-red-500/30 rounded-lg p-4 transform transition-all duration-700 delay-100 ${showStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                  <Target className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">100%</div>
+                  <div className="text-red-200 text-sm">Match Ready</div>
+                </div>
+                <div className={`bg-black/60 backdrop-blur-sm border border-red-500/30 rounded-lg p-4 transform transition-all duration-700 delay-200 ${showStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                  <Users className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">22</div>
+                  <div className="text-red-200 text-sm">Player Capacity</div>
+                </div>
+                <div className={`bg-black/60 backdrop-blur-sm border border-red-500/30 rounded-lg p-4 transform transition-all duration-700 delay-300 ${showStats ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                  <Activity className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-white">4.9</div>
+                  <div className="text-red-200 text-sm">Champion Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Image Indicators */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-3">
+          {curTurf.images.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentImageIndex(index)}
+              className={`transition-all duration-300 ${
+                index === currentImageIndex 
+                  ? 'w-8 h-3 bg-red-500' 
+                  : 'w-3 h-3 bg-white/50 hover:bg-white/80'
+              } rounded-full`}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Stadium-Style Info Section */}
+      <section className="relative bg-gradient-to-br from-gray-900 via-black to-gray-900 py-16">
+        {/* Animated Red Accent Lines */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+
+        <div className="container mx-auto px-6">
+          {/* Operating Hours - Stadium Style */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center bg-black border-2 border-red-500 rounded-xl px-8 py-4">
+              <Clock className="w-8 h-8 mr-4 text-red-500" />
+              <div className="text-left">
+                <div className="text-red-400 text-sm font-medium">MATCH HOURS</div>
+                <div className="text-white text-xl font-bold">{curTurf.opening_time} - {curTurf.closing_time}</div>
+              </div>
+              <div className={`ml-6 px-4 py-2 rounded-lg font-bold ${
+                isOpen 
+                  ? 'bg-red-600 text-white animate-pulse' 
+                  : 'bg-gray-700 text-gray-300'
+              }`}>
+                {isOpen ? 'GAME ON!' : 'BREAK TIME'}
+              </div>
             </div>
           </div>
 
-          {/* Sidebar - Booking & Contact */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-lg p-8 sticky top-6">
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Ready to Play?</h3>
-                <p className="text-gray-600">Book your slot now and enjoy the best cricket experience!</p>
+          <div className="grid lg:grid-cols-2 gap-12 items-start">
+            {/* About Section */}
+            <div className="bg-gradient-to-br from-gray-900 to-black border border-red-500/30 rounded-2xl p-8">
+              <h2 className="text-4xl font-black text-white mb-6 flex items-center">
+                <Trophy className="w-10 h-10 mr-4 text-red-500" />
+                THE ARENA
+              </h2>
+              <p className="text-gray-300 text-lg leading-relaxed mb-8">
+                {curTurf.description}
+              </p>
+              
+              {/* Amenities - Jersey Number Style */}
+              <h3 className="text-2xl font-bold text-red-400 mb-6 flex items-center">
+                <Star className="w-6 h-6 mr-3" />
+                CHAMPION FACILITIES
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {curTurf.amenities.map((amenity, index) => (
+                  <div
+                    key={index}
+                    className="group flex items-center p-4 bg-black/60 border border-red-500/20 rounded-lg hover:border-red-500/60 hover:bg-red-900/20 transition-all duration-300"
+                  >
+                    <div className="text-red-500 mr-4 group-hover:scale-110 transition-transform duration-300">
+                      {getAmenityIcon(amenity)}
+                    </div>
+                    <span className="font-semibold text-white group-hover:text-red-100 transition-colors duration-300">
+                      {amenity}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Contact & Booking Sidebar */}
+            <div className="space-y-6">
+              {/* Main Booking Card */}
+              <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-8 border-2 border-red-400/50 shadow-2xl">
+                <div className="text-center mb-6">
+                  <h3 className="text-3xl font-black text-white mb-2">READY TO DOMINATE?</h3>
+                  <p className="text-red-100">Book your championship slot now!</p>
+                </div>
+
+                <button
+                  onClick={()=> handleClick(curTurf.id)}
+                  className="w-full bg-black hover:bg-gray-900 text-white py-5 px-6 rounded-xl text-xl font-bold transition-all duration-300 transform hover:scale-105 shadow-lg border-2 border-white/20 hover:border-white/40 mb-6 group"
+                >
+                  <div className="flex items-center justify-center">
+                    <Calendar className="w-6 h-6 mr-3 group-hover:rotate-12 transition-transform duration-300" />
+                    BOOK YOUR SLOT
+                  </div>
+                </button>
+
+                {/* Quick Contact */}
+                <div className="grid grid-cols-3 gap-3">
+                  {curTurf.contact_phone && (
+                    <button
+                      onClick={handleCall}
+                      className="bg-black/40 hover:bg-black/60 text-white py-3 rounded-lg transition-all duration-300 hover:scale-105 border border-white/20"
+                    >
+                      <Phone className="w-5 h-5 mx-auto" />
+                    </button>
+                  )}
+                  {curTurf.contact_phone && (
+                    <button
+                      onClick={handleWhatsApp}
+                      className="bg-black/40 hover:bg-black/60 text-white py-3 rounded-lg transition-all duration-300 hover:scale-105 border border-white/20"
+                    >
+                      <MessageCircle className="w-5 h-5 mx-auto" />
+                    </button>
+                  )}
+                  {curTurf.contact_email && (
+                    <button
+                      onClick={handleEmail}
+                      className="bg-black/40 hover:bg-black/60 text-white py-3 rounded-lg transition-all duration-300 hover:scale-105 border border-white/20"
+                    >
+                      <Mail className="w-5 h-5 mx-auto" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <button
-                onClick={()=>handleClick(curTurf.id)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg mb-6"
-              >
-                Book Now
-              </button>
-
-              <div className="border-t pt-6">
-                <h4 className="font-semibold text-gray-900 mb-4">Contact Information</h4>
+              {/* Contact Details */}
+              <div className="bg-black border border-red-500/30 rounded-xl p-6">
+                <h4 className="font-bold text-red-400 mb-4 text-lg">TEAM CONTACT</h4>
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center">
-                    <Clock className="w-5 h-5 mr-3 text-gray-500" />
-                    <div>
-                      <p className="font-medium">Operating Hours</p>
-                      <p className="text-sm text-gray-600">{curTurf.opening_time} - {curTurf.closing_time}</p>
+                    <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center mr-4">
+                      <MapPin className="w-5 h-5 text-white" />
                     </div>
-                  </div>
-
-                  <div className="flex items-center">
-                    <MapPin className="w-5 h-5 mr-3 text-gray-500" />
                     <div>
-                      <p className="font-medium">Location</p>
+                      <p className="font-semibold text-white">Ground Location</p>
                       <button 
                         onClick={handleLocationClick}
-                        className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200 underline"
+                        className="text-red-300 hover:text-red-100 transition-colors duration-300 text-sm"
                       >
                         {curTurf.location}
                       </button>
@@ -384,12 +486,14 @@ export default function TurfsPage() {
 
                   {curTurf.contact_phone && (
                     <div className="flex items-center">
-                      <Phone className="w-5 h-5 mr-3 text-gray-500" />
+                      <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center mr-4">
+                        <Phone className="w-5 h-5 text-white" />
+                      </div>
                       <div>
-                        <p className="font-medium">Phone</p>
+                        <p className="font-semibold text-white">Call Direct</p>
                         <button
                           onClick={handleCall}
-                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                          className="text-red-300 hover:text-red-100 transition-colors duration-300 text-sm"
                         >
                           {curTurf.contact_phone}
                         </button>
@@ -399,12 +503,14 @@ export default function TurfsPage() {
 
                   {curTurf.contact_email && (
                     <div className="flex items-center">
-                      <Mail className="w-5 h-5 mr-3 text-gray-500" />
+                      <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center mr-4">
+                        <Mail className="w-5 h-5 text-white" />
+                      </div>
                       <div>
-                        <p className="font-medium">Email</p>
+                        <p className="font-semibold text-white">Email Team</p>
                         <button
                           onClick={handleEmail}
-                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors duration-200"
+                          className="text-red-300 hover:text-red-100 transition-colors duration-300 text-sm"
                         >
                           {curTurf.contact_email}
                         </button>
@@ -412,59 +518,38 @@ export default function TurfsPage() {
                     </div>
                   )}
                 </div>
-
-                <div className="flex space-x-3 mt-6 pt-6 border-t">
-                  {curTurf.contact_phone && (
-                    <button
-                      onClick={handleCall}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center"
-                    >
-                      <Phone className="w-4 h-4 mr-2" />
-                      Call
-                    </button>
-                  )}
-                  {curTurf.contact_phone && (
-                    <button
-                      onClick={handleWhatsApp}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      WhatsApp
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Floating Book Now Button for Mobile */}
-      {/* <div className="fixed bottom-6 right-6 lg:hidden z-50">
+      {/* Floating Mobile Action */}
+      <div className="fixed bottom-6 right-6 lg:hidden z-50">
         <button
-          onClick={handleBookNow}
-          className="bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-2xl transition-all duration-200 transform hover:scale-110"
+          onClick={()=> handleClick(curTurf.id)}
+          className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 border-2 border-red-400/50"
         >
-          <Calendar className="w-6 h-6" />
+          <Calendar className="w-7 h-7" />
         </button>
-      </div> */}
-
-      {/* Status Indicator */}
-      <div className="fixed top-6 right-6 z-40">
-        <div className={`px-4 py-2 rounded-full text-white font-medium ${
-          isOpen ? 'bg-green-600' : 'bg-red-600'
-        }`}>
-          <div className="flex items-center">
-            <div className={`w-2 h-2 rounded-full mr-2 ${
-              isOpen ? 'bg-green-300' : 'bg-red-300'
-            } animate-pulse`}></div>
-            {isOpen ? 'Open Now' : 'Closed'}
-          </div>
-        </div>
       </div>
+
+      {/* Animated Elements */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };
+
+// export default RCBTurfHomepage;
 /*Uncomment below code and remove above code to make multiple turfs*/ 
 // import Image from 'next/image'
 // import Link from 'next/link'

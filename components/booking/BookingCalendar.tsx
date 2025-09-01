@@ -40,7 +40,7 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <CalendarDays className="w-5 h-5 text-green-600" />
+          <CalendarDays className="w-5 h-5 text-red-600" />
           Select Date
         </CardTitle>
       </CardHeader>
@@ -73,13 +73,13 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
           }
           
           .react-calendar__tile:hover:not(:disabled) {
-            background: #f0fdf4;
+            background: #CE4C4C  ; 
             border-color: #16a34a;
           }
           
           .react-calendar__tile--active {
-            background: #16a34a !important;
-            border-color: #16a34a !important;
+            background: #E31E24 !important;
+            border-color: #FF0000 !important;
             color: white !important;
           }
           
@@ -90,13 +90,13 @@ export function BookingCalendar({ onDateSelect, selectedDate }: BookingCalendarP
           }
           
           .react-calendar__navigation button {
-            color: #16a34a;
+            color: #E31E24;
             font-size: 16px;
             font-weight: 600;
           }
           
           .react-calendar__navigation button:hover {
-            background: #f0fdf4;
+            background: #E31E24;
           }
         `}</style>
       </CardContent>

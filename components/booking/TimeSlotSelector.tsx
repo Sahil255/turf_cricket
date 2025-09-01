@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ChartColumnStackedIcon, Clock, IndianRupee, Timer } from 'lucide-react';
+import { ChartColumnStackedIcon, Clock, IndianRupee, LucideStepForward, StepForwardIcon, Timer } from 'lucide-react';
 import { format, addMinutes, parseISO, isAfter, isBefore } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import BookingSummaryCard from './BookingSummaryCard';
 
 interface PricingSlot {
   id: string;
@@ -42,11 +43,27 @@ export function TimeSlotSelector({
   const [loading, setLoading] = useState(true);
   const { user,firebaseUser } = useAuth();
   const [bookingLoading, setBookingLoading] = useState(false)
-
+  const [isBookingSummaryOpen, setBookingSummaryOpen] = useState(false);
+  // const [selectedDate_f,setSelectedDate] = useState();
+  // const [startTime_f,sets=StartTimeDate] = useState();
+  const [endTime_f,setSelectedEndDate] = useState<String>();
+  // const [dration_f,setSelectedDuration] = useState();
+  const [totalAmout_f,setTotalAmount] = useState<Number>(500);
+//  startTime_f,endTime_f,dration_f,totalAmout_f,
   useEffect(() => {
     fetchPricingSlots();
     fetchExistingBookings();
   }, [turfId, selectedDate]);
+
+  useEffect(() => {
+    return () => {
+      setBookingSummaryOpen(false);
+      setBookingLoading(false);
+      setLoading(false); // Set loading to false when exiting
+      console.log('BookingSummaryCard unmounted, loading reset to false');
+    };
+  }, []);
+  
 
   useEffect(() => {
     // Reset selection when duration changes
@@ -178,14 +195,20 @@ export function TimeSlotSelector({
     setBookingLoading(true);
     //  await new Promise(resolve => setTimeout(resolve, 30)); //reduce the sleep time
     console.log("SH handing slot confirm ",selectedStartTime)
+    
     if (selectedStartTime) {
       const endTime = format(addMinutes(new Date(`2024-01-01T${selectedStartTime}`), selectedDuration), 'HH:mm');
       const totalAmount = calculatePrice(selectedStartTime, selectedDuration);
       console.log("SH handing slot confirm totalAmount ",totalAmount," selectedDuration " ,selectedDuration)
+      setTotalAmount(totalAmount);
+      setSelectedEndDate(endTime);
+      setBookingSummaryOpen(true);
       onSlotSelect(selectedStartTime, endTime, totalAmount, selectedDuration);
       console.log("in handleSlotCnfirm last");
     }
   };
+
+  const handleBookingSummaryClose = ()=> {setBookingSummaryOpen(false); setBookingLoading(false)}
 
   const timeSlots = generateTimeSlots();
   const durations = [60, 90, 120, 150, 180, 210, 240, 270]; // Duration options in minutes
@@ -227,8 +250,8 @@ export function TimeSlotSelector({
                 onClick={() => setSelectedDuration(duration)}
                 className={`h-12 text-sm sm:text-base ${
                   selectedDuration === duration
-                    ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-400'
-                    : 'border-gray-300 dark:border-secondary-700 hover:bg-green-50 dark:hover:bg-secondary-700'
+                    ? 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-400'
+                    : 'border-gray-300 dark:border-secondary-700 hover:bg-red-50 dark:hover:bg-secondary-700'
                 }`}
                 aria-label={`Select ${duration} minutes duration`}
               >
@@ -290,8 +313,8 @@ export function TimeSlotSelector({
                   onClick={() => setSelectedStartTime(time)}
                   className={`h-16 flex flex-col text-sm sm:text-base ${
                     isSelected
-                      ? 'bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700'
-                      : 'border-gray-300 dark:border-secondary-700 hover:bg-green-50 dark:hover:bg-secondary-700'
+                      ? 'bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700'
+                      : 'border-gray-300 dark:border-secondary-700 hover:bg-red-50 dark:hover:bg-secondary-700'
                   } ${!isAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
                   aria-label={`Select time slot starting at ${time}`}
                 >
@@ -314,13 +337,13 @@ export function TimeSlotSelector({
           
         </CardContent>
       </Card>
-
+      
       {/* Booking Confirmation */}
       {selectedStartTime && (
-        <Card className="border-green-400 bg-gradient-to-r from-green-50 to-green-100">
+        <Card className="border-red-50 white">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <h3 className="font-semibold text-green-800 text-lg">Booking Summary</h3>
                 <div className="space-y-1 text-sm">
                   <p className="flex items-center text-gray-700">
@@ -333,34 +356,49 @@ export function TimeSlotSelector({
                     Duration: {selectedDuration} minutes ({selectedDuration / 60} hours)
                   </p>
                 </div>
-              </div>
+              </div> */}
               <div className="text-right space-y-2">
-                <div className="flex items-center justify-end text-2xl font-bold text-green-800 dark:text-green-800">
+                {/* <div className="flex items-center justify-end text-2xl font-bold text-green-800 dark:text-green-800">
                   <IndianRupee className="w-6 h-6" />
                   {calculatePrice(selectedStartTime, selectedDuration)}
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-600">Total Amount</p>
+                <p className="text-xs text-green-600 dark:text-green-600">Total Amount</p> */}
                 <Button
                   onClick={handleSlotConfirm}
-                  className="w-full sm:w-auto bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 mt-3"
+                  // onClick={()=>{setBookingSummaryOpen(true)}}
+                  className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700  text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 mt-3"
                   size="lg"
                   disabled={bookingLoading}
                   aria-label="Confirm booking"
                 >
-                  {bookingLoading ? (
+                  proceed 
+                  <LucideStepForward className='w-4'/>
+                  
+                  {/* {bookingLoading ? (
                     <span className="flex items-center">
                       <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
                       Booking...
                     </span>
                   ) : (
-                    'Confirm Booking'
-                  )}
+                    'Proceed>>'
+                  )} */}
                 </Button>
               </div>
             </div>
           </CardContent>
         </Card>
+        
       )}
+      <BookingSummaryCard
+        isOpen={isBookingSummaryOpen}
+        selectedDate={selectedDate}
+        startTime={selectedStartTime ?? ''}
+        endTime={endTime_f ?? ''}
+        selectedDuration={`${selectedDuration} min`}
+        totalAmount={calculatePrice(selectedStartTime ?? '', selectedDuration)}
+        onConfirm={handleSlotConfirm}
+        onClose={handleBookingSummaryClose}
+      />
     </div>
   )
 }

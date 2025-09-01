@@ -71,7 +71,7 @@ export default function AdminBookings() {
   } | null>(null)
   const router = useRouter()
   useEffect(() => {
-    // fetchBookings();
+    
     if (localStorage.theme === 'dark') {
       document.documentElement.classList.add('dark');
     }
@@ -278,7 +278,13 @@ export default function AdminBookings() {
 
   return (
     <>
-      <div className="min-h-screen bg-background dark:bg-background">
+      <div className="min-h-screen overflow-scroll  bg-black">
+      {/* Animated Background Pattern */}
+      {/* <div className="fixed inset-0 opacity-5">
+        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+        <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+      </div> */}
 
         <main className="container mx-auto px-4 py-8 sm:py-10">
           {/* Header Section */}
@@ -292,8 +298,8 @@ export default function AdminBookings() {
           </section>
 
           {/* Filters */}
-          <section className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <div className="relative flex-1">
+          <section className="flex flex-col sm:flex-row gap-3 sm:gap-4 shadow-md mb-16 sm:mb-8">
+            <div className="fixed flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" />
               <Input
                 placeholder="Search by Booking ID..."

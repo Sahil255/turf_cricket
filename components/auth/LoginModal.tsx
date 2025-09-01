@@ -246,17 +246,17 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   return (
     <>
     <div id="recaptcha-container"></div>
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex  items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-md"
         onClick={handleClose}
       />
       
       {/* Modal */}
       <div 
         className={`
-          relative w-full max-w-md mx-4 bg-white rounded-2xl shadow-2xl
+          relative w-full max-w-md mx-4 bg-gray-950  rounded-2xl shadow-2xl
           transition-all duration-300 ease-out
           ${isKeyboardOpen 
             ? 'max-h-[60vh] transform -translate-y-8' 
@@ -265,12 +265,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center text-white justify-between p-6 border-b border-red-1000">
           <div className="flex items-center space-x-3">
-            {step === 'phone' && <Phone className="w-6 h-6 text-blue-600" />}
-            {step === 'otp' && <MessageSquare className="w-6 h-6 text-green-600" />}
-            {step === 'profile' && <User className="w-6 h-6 text-purple-600" />}
-            <h2 className="text-xl font-semibold text-gray-900">
+            {step === 'phone' && <Phone className="w-6 h-6 text-white-600" />}
+            {step === 'otp' && <MessageSquare className="w-6 h-6 text-white-600" />}
+            {step === 'profile' && <User className="w-6 h-6 text-white-600" />}
+            <h2 className="text-xl font-semibold text-white-900">
               {step === 'phone' && 'Login with Phone'}
               {step === 'otp' && 'Verify OTP'}
               {step === 'profile' && 'Complete Profile'}
@@ -278,9 +278,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-white-100 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-white-500" />
           </button>
         </div>
 
@@ -289,7 +289,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {step === 'phone' && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-white">
                   Phone Number
                 </label>
                 <div className="relative">
@@ -306,8 +306,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       w-full pl-20 pr-4 py-4 text-lg rounded-xl border-2 
                       transition-all duration-200 bg-gray-50
                       ${phoneError 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : 'border-gray-200 focus:border-blue-500 focus:bg-white'
+                        ? 'border-yellow-500 focus:amber-yellow-500' 
+                        : 'border-gray-200 focus:red-blue-500 focus:bg-white'
                       }
                       focus:outline-none focus:shadow-lg
                     `}
@@ -315,7 +315,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   />
                 </div>
                 {phoneError && (
-                  <p className="text-sm text-red-600 mt-1">{phoneError}</p>
+                  <p className="text-sm text-yellow-600 mt-1">{phoneError}</p>
                 )}
               </div>
               
@@ -326,7 +326,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200
                   ${loading || phoneNumber.length !== 10
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-lg hover:shadow-xl'
+                    : 'bg-gradient-to-r from-red-600 to-red-700  text-white hover:bg-red-700 active:bg-red-800 shadow-lg hover:shadow-xl'
                   }
                 `}
               >
@@ -345,14 +345,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {step === 'otp' && (
             <div className="space-y-4">
               <div className="text-center space-y-2">
-                <p className="text-gray-600">
+                <p className="text-white">
                   Enter the 6-digit code sent to
                 </p>
-                <p className="font-semibold text-lg">+91 {phoneNumber}</p>
+                <p className="font-semibold text-white text-lg">+91 {phoneNumber}</p>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-white">
                   OTP Code
                 </label>
                 <input
@@ -365,7 +365,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   }}
                   onFocus={handleInputFocus}
                   className="w-full px-4 py-4 text-xl text-center rounded-xl border-2 border-gray-200 
-                           focus:border-green-500 focus:outline-none focus:bg-white focus:shadow-lg 
+                           focus:border-red-500 focus:outline-none focus:bg-white focus:shadow-lg 
                            bg-gray-50 transition-all duration-200 tracking-widest"
                   maxLength={6}
                 />
@@ -379,7 +379,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200
                     ${loading || otp.length !== 6
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-green-600 text-white hover:bg-green-700 active:bg-green-800 shadow-lg hover:shadow-xl'
+                      : 'bg-gradient-to-r from-red-600 to-red-700  text-white hover:bg-red-700 active:bg-red-800 shadow-lg hover:shadow-xl'
                     }
                   `}
                 >
@@ -395,7 +395,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                 <button
                   onClick={() => setStep('phone')}
-                  className="w-full py-3 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                  className="w-full py-3 text-red-600 hover:text-red-700 font-medium transition-colors"
                 >
                   Change Phone Number
                 </button>
@@ -406,12 +406,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {step === 'profile' && (
             <div className="space-y-4">
               <div className="text-center space-y-2">
-                <p className="text-gray-600">Almost done! Complete your profile</p>
+                <p className="text-gray-100">Almost done! Complete your profile</p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-white">
                     Full Name *
                   </label>
                   <input
@@ -421,13 +421,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     onChange={(e) => setName(e.target.value)}
                     onFocus={handleInputFocus}
                     className="w-full px-4 py-4 text-lg rounded-xl border-2 border-gray-200 
-                             focus:border-purple-500 focus:outline-none focus:bg-white focus:shadow-lg 
+                             focus:border-red-500 focus:outline-none focus:bg-white focus:shadow-lg 
                              bg-gray-50 transition-all duration-200"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-white">
                     Email (Optional)
                   </label>
                   <input
@@ -437,7 +437,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     onChange={(e) => setEmail(e.target.value)}
                     onFocus={handleInputFocus}
                     className="w-full px-4 py-4 text-lg rounded-xl border-2 border-gray-200 
-                             focus:border-purple-500 focus:outline-none focus:bg-white focus:shadow-lg 
+                             focus:border-red-500 focus:outline-none focus:bg-white focus:shadow-lg 
                              bg-gray-50 transition-all duration-200"
                   />
                 </div>
@@ -450,7 +450,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   w-full py-4 rounded-xl font-semibold text-lg transition-all duration-200
                   ${loading || !name.trim()
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-purple-600 text-white hover:bg-purple-700 active:bg-purple-800 shadow-lg hover:shadow-xl'
+                    : 'bg-gradient-to-r from-red-600 to-red-700  text-white hover:bg-red-700 active:bg-red-800 shadow-lg hover:shadow-xl'
                   }
                 `}
               >
