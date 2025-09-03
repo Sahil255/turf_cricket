@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast'
 import { TimeSlotSelector } from '@/components/booking/TimeSlotSelector'
 import { BookingRequest, Turf } from '@/types'
 import { BookingConfirmationDialog } from '@/components/booking/BookingConfirmationDiag'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 
 interface Booking {
@@ -60,6 +61,7 @@ export default function BookingPage() {
 
   useEffect(() => {
     if (params.id) {
+      // setLoading(true);
       fetchTurf()
     }
   }, [params.id])
@@ -82,7 +84,7 @@ export default function BookingPage() {
     }
   }
 
-    // Validate phone number
+  // Validate phone number
   const validatePhoneNumber = (phone: string) => {
     const cleanPhone = phone.replace(/[^0-9+]/g, '') // Remove non-numeric characters except +
     if (cleanPhone.startsWith('+91') && cleanPhone.length === 13) return cleanPhone
@@ -92,14 +94,14 @@ export default function BookingPage() {
 
   const handlePaymentResults = async (
     bookingId: string,
-    selectedDate:string,
+    selectedDate: string,
     startTime: string,
     endTime: string,
     totalAmount: number,
     duration: number,
     turfName: string,
-    status:boolean,
-    token:string
+    status: boolean,
+    token: string
   ) => {
     const updatePayment = await fetch(`/api/bookings/${bookingId}`, {
       method: 'PUT',
@@ -108,16 +110,15 @@ export default function BookingPage() {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        payment_status:"failed",
-        booking_status:"cancelled"
+        payment_status: "failed",
+        booking_status: "cancelled"
       }),
     })
-    if(updatePayment.ok)
-    {
+    if (updatePayment.ok) {
       //TODO:Use the payment dialog box to show payment was success but couldn't save it to database call customer care
-      
+
     }
-     setBookingDetails({
+    setBookingDetails({
       id: bookingId,
       turf_name: turfName || 'Turf',
       booking_date: selectedDate,
@@ -125,7 +126,7 @@ export default function BookingPage() {
       end_time: endTime,
       duration_minutes: duration,
       total_amount: totalAmount,
-      booking_status: status?'Confirmed':'Failed',
+      booking_status: status ? 'Confirmed' : 'Failed',
     })
     setShowConfirmationDialog(true)
   }
@@ -174,7 +175,7 @@ export default function BookingPage() {
       // const booking:Booking  = await bookingResponse.json()
       booking = await bookingResponse.json();
 
-      console.log("turf SH inserted ",booking);
+      console.log("turf SH inserted ", booking);
 
       // console.log("SH booking_id ",booking_id.id);
 
@@ -191,8 +192,8 @@ export default function BookingPage() {
         }),
       })
 
-      
-      console.log("SH order response",orderResponse);
+
+      console.log("SH order response", orderResponse);
 
       if (!orderResponse.ok) {
         setBookingLoading(false);
@@ -200,7 +201,7 @@ export default function BookingPage() {
       }
 
       const { order_id } = await orderResponse.json()
-      
+
       // Initialize Razorpay checkout
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
@@ -229,25 +230,24 @@ export default function BookingPage() {
             })
 
             if (verifyResponse.ok) {
-                const paymentData = await verifyResponse.json()
-              
-                //store payment id aswell
-                const updatePayment = await fetch(`/api/bookings/${booking.id}`, {
+              const paymentData = await verifyResponse.json()
+
+              //store payment id aswell
+              const updatePayment = await fetch(`/api/bookings/${booking.id}`, {
                 method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                  payment_status:"completed",
-                  booking_status:"confirmed",
-                  rzr_order_id:response.razorpay_order_id,
-                  rzr_payment_id:response.razorpay_payment_id,
-                  rzr_signature:response.razorpay_signature,
+                  payment_status: "completed",
+                  booking_status: "confirmed",
+                  rzr_order_id: response.razorpay_order_id,
+                  rzr_payment_id: response.razorpay_payment_id,
+                  rzr_signature: response.razorpay_signature,
                 }),
               })
-              if(updatePayment.ok)
-              {
+              if (updatePayment.ok) {
                 setBookingDetails({
                   id: booking.id,
                   turf_name: turf?.name || 'Turf',
@@ -260,37 +260,37 @@ export default function BookingPage() {
                 })
                 setShowConfirmationDialog(true)
               }
-              else{
+              else {
                 console.log("SH Payment success but failed to update the DB");
-                 //TODO:Use the payment dialog box to show payment was success but couldn't save it to database call customer care
+                //TODO:Use the payment dialog box to show payment was success but couldn't save it to database call customer care
               }
               // router.push('/bookings')
             } else {
               const error = await verifyResponse.json()
-               
+
 
               throw new Error(error.error || 'Payment verification failed')
             }
           } catch (error) {
             console.error('SH: Payment verification error:', error)
-            handlePaymentResults( 
-                booking.id,selectedDate,startTime,endTime,totalAmount,duration,turf?.name??'RCB Turf',false,token ?? '');
-                
+            handlePaymentResults(
+              booking.id, selectedDate, startTime, endTime, totalAmount, duration, turf?.name ?? 'RCB Turf', false, token ?? '');
+
           } finally {
             setBookingLoading(false)
           }
         },
-         modal: {
-            ondismiss: function() {
-              // This callback is triggered when the modal is closed by the user
-              console.log(" SH !!! Payment dismissed by user");
-              handlePaymentResults( 
-                booking.id,selectedDate,startTime,endTime,totalAmount,duration,turf?.name??'RCB Turf',false,token ?? '');
-                
-              // setPaymentStatus('failed');
-              // setErrorMessage('Payment was cancelled.');
-            },
+        modal: {
+          ondismiss: function () {
+            // This callback is triggered when the modal is closed by the user
+            console.log(" SH !!! Payment dismissed by user");
+            handlePaymentResults(
+              booking.id, selectedDate, startTime, endTime, totalAmount, duration, turf?.name ?? 'RCB Turf', false, token ?? '');
+
+            // setPaymentStatus('failed');
+            // setErrorMessage('Payment was cancelled.');
           },
+        },
         prefill: {
           name: user.name || '',
           contact: `+91${user.phone}`,
@@ -299,21 +299,20 @@ export default function BookingPage() {
           color: '#16a34a', // bg-green-600
         },
       }
-      try{
+      try {
         const rzp = new (window as any).Razorpay(options)
 
-         rzp.on('payment.failed', function (response: any) {
+        rzp.on('payment.failed', function (response: any) {
           // This is the specific event for all failure cases, including user exit
           console.log("Payment failed:", response);
-          handlePaymentResults( 
-                booking.id,selectedDate,startTime,endTime,totalAmount,duration,turf?.name??'RCB Turf',false,token ?? '');
-                
+          handlePaymentResults(
+            booking.id, selectedDate, startTime, endTime, totalAmount, duration, turf?.name ?? 'RCB Turf', false, token ?? '');
+
         });
-        
+
         rzp.open()
-      } catch (error)
-      {
-        console.error("SH OPtion booking error ",error);
+      } catch (error) {
+        console.error("SH OPtion booking error ", error);
       }
     } catch (error) {
       console.error('SH: Booking error:', error)
@@ -330,7 +329,6 @@ export default function BookingPage() {
 
   if (authLoading || loading) {
     return (
-      
       <div className=" container mx-auto px-4 py-8 flex items-center justify-center min-h-screen  bg-black">
         {/* Animated Background Pattern */}
         <div className="fixed inset-0 opacity-5">
@@ -339,13 +337,45 @@ export default function BookingPage() {
           <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
         </div>
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+
       </div>
+
+      //  <div className=" min-h-screen justify-center self-center overflow-scroll container mx-auto px-10 py-16 bg-black">
+      // <div className="fixed inset-0 opacity-5">
+      //   <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+      //   <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+      //   <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+      // </div>
+      // <section className=" flex flex-auto justify-center self-center align-middle center overflow-hidden">
+
+      //         <div className="animate-spin justify-center rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+
+      //  {/* Animated Background Pattern */}
+      //      <div className="space-y-4 sm:space-y-6 ">
+
+      //       <Card  className="m-6 mt-20 bg-card border-border shadow-md animate-pulse">
+      //         <CardContent className="p-4 sm:p-5">
+      //           <div className="w-full border-none h-32 sm:h-36 bg-muted rounded-md"></div>
+      //         </CardContent>
+      //       </Card>
+
+      //     </div> 
+      //      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div> 
+      //  </section>
+      //   </div>
     )
   }
 
   if (!turf) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
+
+      <div className=" min-h-screen overflow-scroll container mx-auto px-10 py-16 bg-black">
+
+        <div className="fixed inset-0 opacity-5">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+        </div>
         <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-secondary-100">Turf not found</h1>
         <Button
           onClick={() => router.push('/turfs')}
@@ -358,39 +388,41 @@ export default function BookingPage() {
   }
 
 
- return (
+  return (
     <>
-      
-    <div className=" n overflow-scroll container mx-auto px-10 py-16 bg-black">
-      {/* Animated Background Pattern */}
-      <div className="fixed inset-0 opacity-5">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
-        <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
-        <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
-      </div>
-      <section className="relative  overflow-hidden">
-        <h4 className="text-2x3 sm:text-1xl center font-sans text-gray-50 dark:text-secondary-100 mb-6">
-          Book Your Turf
-        </h4>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <BookingCalendar onDateSelect={setSelectedDate} selectedDate={selectedDate} />
-          </div>
-          <div className="space-y-6">
-            {selectedDate && (
-              <TimeSlotSelector
-                turfId={turf.id}
-                selectedDate={selectedDate}
-                openingTime={turf.opening_time}
-                closingTime={turf.closing_time}
-                onSlotSelect={handleSlotSelect}
-              />
-            )}
-          </div>
+
+      <div className=" n overflow-scroll container mx-auto px-10 py-16 bg-black">
+        {/* Animated Background Pattern */}
+        <div className="fixed inset-0 opacity-5">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
         </div>
+        <section className="relative  overflow-hidden">
+          <h4 className="text-2x3 sm:text-1xl center font-sans text-gray-50 dark:text-secondary-100 mb-6">
+            Book Your Turf
+          </h4>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <BookingCalendar onDateSelect={setSelectedDate} selectedDate={selectedDate} />
+            </div>
+            <div className="space-y-6 ">
+              {selectedDate && (
+                <TimeSlotSelector
+                  turfId={turf.id}
+                  selectedDate={selectedDate}
+                  openingTime={turf.opening_time}
+                  closingTime={turf.closing_time}
+                  onSlotSelect={handleSlotSelect}
+                />
+              )}
+            </div>
+          </div>
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
         </section>
       </div>
-     
+
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}

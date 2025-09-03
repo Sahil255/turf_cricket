@@ -8,6 +8,7 @@ import { ChartColumnStackedIcon, Clock, IndianRupee, LucideStepForward, StepForw
 import { format, addMinutes, parseISO, isAfter, isBefore } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import BookingSummaryCard from './BookingSummaryCard';
+import DurationSelector from './DurationSelector';
 
 interface PricingSlot {
   id: string;
@@ -49,10 +50,13 @@ export function TimeSlotSelector({
   const [endTime_f,setSelectedEndDate] = useState<String>();
   // const [dration_f,setSelectedDuration] = useState();
   const [totalAmout_f,setTotalAmount] = useState<Number>(500);
+  const [timeSlotLoading,setTimeSlotLoading] = useState(false);
 //  startTime_f,endTime_f,dration_f,totalAmout_f,
   useEffect(() => {
+    
     fetchPricingSlots();
     fetchExistingBookings();
+    setSelectedStartTime(null);
   }, [turfId, selectedDate]);
 
   useEffect(() => {
@@ -71,6 +75,8 @@ export function TimeSlotSelector({
   }, [selectedDuration]);
 
   const fetchPricingSlots = async () => {
+    setTimeSlotLoading(true);
+    // await new Promise(resolve => setTimeout(resolve, 50000)); //reduce the sleep time
     try {
         console.log("in tme selct",turfId);
       const response = await fetch(`/api/pricing-slots?turfId=${turfId}`);
@@ -79,11 +85,14 @@ export function TimeSlotSelector({
     } catch (error) {
       console.error('Error fetching pricing slots:', error);
     }
+    setTimeSlotLoading(false);
   };
 
   const fetchExistingBookings = async () => {
+    setTimeSlotLoading(true);
     try {
         console.log("SH fetching booking details");
+         
         let headers: HeadersInit = {};
       if (user) {
         const token = await firebaseUser?.getIdToken();
@@ -102,6 +111,7 @@ export function TimeSlotSelector({
       console.error('Error fetching bookings:', error);
     } finally {
       setLoading(false);
+      setTimeSlotLoading(false);
     }
   };
 
@@ -191,6 +201,19 @@ export function TimeSlotSelector({
     return Math.round(totalPrice);
   };
 
+  const isSlotElapsed =(startTime: string) => {
+    const currDate = new Date();
+    const slotStart = new Date(`${selectedDate}T${startTime}`);
+    const hasElapsed = slotStart < currDate;
+    if(hasElapsed)
+    {
+      console.log("SH b");
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
   const handleSlotConfirm = async () => {
     setBookingLoading(true);
     //  await new Promise(resolve => setTimeout(resolve, 30)); //reduce the sleep time
@@ -258,7 +281,11 @@ export function TimeSlotSelector({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <DurationSelector
+            selectedDuration={selectedDuration}
+            setSelectedDuration={setSelectedDuration}
+          />
+          {/* <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {durations.map((duration) => (
               <Button
                 key={duration}
@@ -293,7 +320,7 @@ export function TimeSlotSelector({
                 </div>
               </Button>
             ))}
-          </div>
+          </div> */}
         </CardContent>
       </Card>
 
@@ -319,13 +346,17 @@ export function TimeSlotSelector({
               const isAvailable = isSlotAvailable(time, selectedDuration)
               const isSelected = selectedStartTime === time
               const price = calculatePrice(time, selectedDuration)
+              if(isSlotElapsed(time)) return null;
+              // if(timeSlotLoading)return(
 
+              // );
+              else
               return (
                 <Button
                   key={time}
                   variant={isSelected ? 'default' : 'outline'}
                   size="sm"
-                  disabled={!isAvailable}
+                  disabled={!isAvailable || timeSlotLoading || loading}
                   onClick={() => setSelectedStartTime(time)}
                   className={`h-16 flex flex-col text-sm sm:text-base ${
                     isSelected
@@ -336,13 +367,14 @@ export function TimeSlotSelector({
                 >
                   <div className="font-semibold">{time}</div>
                   <div className="text-xs opacity-80">
-                    {isAvailable ? (
+                    
+                    {timeSlotLoading? 'loading..' :isAvailable ? (
                       <span className="flex items-center">
                         <IndianRupee className="w-3 h-3 mr-1" />
                         {price}
                       </span>
                     ) : (
-                      'booked'
+                      timeSlotLoading? 'loading..' : 'booked'
                     )}
                   </div>
                 </Button>
@@ -373,34 +405,31 @@ export function TimeSlotSelector({
                   </p>
                 </div>
               </div> */}
-              <div className="text-right space-y-2">
-                {/* <div className="flex items-center justify-end text-2xl font-bold text-green-800 dark:text-green-800">
+              <div className="  space-y-2">
+                <div className="grid grid-cols-2 justify-stretch">
+                    <p className="flex items-center justify-start text-md font-bold text-black dark:text-black">Total Amount</p>
+                   <div className="flex items-center justify-end text-2xl font-bold text-black dark:text-black">
                   <IndianRupee className="w-6 h-6" />
                   {calculatePrice(selectedStartTime, selectedDuration)}
                 </div>
-                <p className="text-xs text-green-600 dark:text-green-600">Total Amount</p> */}
-                <Button
+               
+                </div>
+               
+               
+              </div>
+              
+            </div>
+             <Button
                   onClick={calculateAndProceed}
                   // onClick={()=>{setBookingSummaryOpen(true)}}
-                  className="w-full sm:w-auto bg-gradient-to-r from-red-600 to-red-700  text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 mt-3"
+                  className="w-full sm:w-auto bg-gradient-to-r font-bold from-red-600 to-red-700  text-white hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700 mt-3"
                   size="lg"
                   disabled={bookingLoading}
                   aria-label="Confirm booking"
                 >
-                  proceed 
+                  PROCEED 
                   <LucideStepForward className='w-4'/>
-                  
-                  {/* {bookingLoading ? (
-                    <span className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                      Booking...
-                    </span>
-                  ) : (
-                    'Proceed>>'
-                  )} */}
-                </Button>
-              </div>
-            </div>
+                  </Button>
           </CardContent>
         </Card>
         

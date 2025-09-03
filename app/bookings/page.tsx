@@ -286,21 +286,21 @@ export default function AdminBookings() {
         <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
       </div> */}
 
-        <main className="container mx-auto px-4 py-8 sm:py-10">
+        <main className="container mx-auto mt-12 px-4 py-8 sm:py-10">
           {/* Header Section */}
           <section className="mb-8 text-center">
-            {/* <h1 className="text-3xl sm:text-4xl font-display text-primary dark:text-primary-foreground mb-2">
+            <h1 className="text-3xl sm:text-4xl font-display text-primary dark:text-primary-foreground mb-2">
             My Bookings
-          </h1> */}
+          </h1>
             <p className="text-base sm:text-lg text-muted-foreground font-sans max-w-md mx-auto">
               View and manage your turf bookings seamlessly.
             </p>
           </section>
 
           {/* Filters */}
-          <section className="flex flex-col sm:flex-row gap-3 sm:gap-4 shadow-md mb-16 sm:mb-8">
-            <div className="fixed flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" />
+          <section className="flex flex-col sm:flex-row gap-3 sm:gap-4 shadow-md mb-8 sm:mb-8">
+            <div className="flex-1">
+              {/* <Search className="absolute left-3  text-muted-foreground w-4 h-4 sm:w-5 sm:h-5" /> */}
               <Input
                 placeholder="Search by Booking ID..."
                 value={searchTerm}
@@ -309,18 +309,6 @@ export default function AdminBookings() {
                 aria-label="Search bookings by ID"
               />
             </div>
-            {/* <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-card text-foreground border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base font-sans"
-            aria-label="Filter bookings by status"
-          >
-            <option value="all">All Status</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="cancelled">Cancelled</option>
-          </select> */}
           </section>
 
           {/* Bookings List */}

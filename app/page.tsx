@@ -184,32 +184,23 @@ export default function TurfsPage() {
     setCurrentImageIndex((prev) => (prev - 1 + curTurf.images.length) % curTurf.images.length);
   };
   
-  if (loading) {
+  if ( loading) {
       return (
-        <div className="container mx-auto px-4 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           <Card  className="animate-pulse">
-                <div className="h-80 bg-gray-200" />
-                <CardContent className="p-4">
-                  <div className="h-4 bg-grey-200 rounded mb-2/3" />
-                  <div className="h-3 bg-grey-200 rounded mb-2" />
-                  <div className="h-3 bg-grey-200 rounded w-2/3" />
-                  {/* CTA Button */}
-                  <div className="mb-8">
-                    <button
-                      onClick={()=> handleClick(curTurf.id)}
-                      className="group relative bg-gradient-to-r from-grey-600 to-grey-700 hover:from-grey-500 hover:to-grey-600 text-white px-12 py-5 rounded-xl text-2xl font-bold transition-all duration-300 transform hover:scale-105 shadow-2xl"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-grey-400 to-grey-500 rounded-xl "></div>
-                      <div className="relative flex items-center">
-                        <Play className="w-48 h-24 mr-3" />
-                      </div>
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-             
-          </div>
+        <div className="  container mx-auto px-4 py-8 flex items-center justify-center min-h-screen  bg-black">
+         
+         <div className="fixed inset-0 opacity-5">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+        </div>
+        {/* Animated Background Pattern */}
+        <div className="fixed inset-0 opacity-5">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-black/40"></div>
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 border border-red-500/30 rounded-full animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-red-500/20 rounded-full animate-pulse delay-1000"></div>
+        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
+
         </div>
       )
     }
@@ -255,9 +246,9 @@ export default function TurfsPage() {
         </button> */}
         <button
           onClick={nextImage}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-red-600/80 hover:bg-red-600 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 z-50"
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-red-600/20 hover:bg-red-600 text-white p-3 rounded-full transition-all duration-300 hover:scale-110 z-40"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="w-4 h-4" />
         </button>
 
         {/* Hero Content */}
@@ -356,13 +347,15 @@ export default function TurfsPage() {
             />
           ))}
         </div>
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
       </section>
 
       {/* Stadium-Style Info Section */}
       <section className="relative bg-gradient-to-br from-gray-900 via-black to-gray-900 py-16">
         {/* Animated Red Accent Lines */}
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+        {/* <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div> */}
 
         <div className="container mx-auto px-6">
           {/* Operating Hours - Stadium Style */}

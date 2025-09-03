@@ -246,7 +246,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   return (
     <>
     <div id="recaptcha-container"></div>
-    <div className="fixed inset-0 z-50 flex  items-center justify-center">
+    <div className="fixed inset-0 z-56 flex  items-center justify-center">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/50 backdrop-blur-md"
