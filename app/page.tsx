@@ -518,7 +518,7 @@ export default function TurfsPage() {
       </section>
 
       {/* Floating Mobile Action */}
-      <div className="fixed bottom-6 right-6 lg:hidden z-50">
+      <div className="fixed bottom-6 right-6 lg:hidden z-40">
         <button
           onClick={()=> handleClick(curTurf.id)}
           className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 border-2 border-red-400/50"
